@@ -510,6 +510,80 @@
     100% { transform: translateY(-50px) scale(1); opacity: 0; }
   }
 
+  /* Mistakes recap on game over */
+  .mistakes-recap {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    width: 100%;
+    max-width: 380px;
+    margin-bottom: 18px;
+  }
+  .mistakes-recap-header {
+    padding: 12px 18px;
+    border-bottom: 1px solid var(--border);
+    font-size: .7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--neon-pink);
+    text-shadow: 0 0 6px var(--neon-pink);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .mistakes-count {
+    background: rgba(255,43,214,.15);
+    color: var(--neon-pink);
+    padding: 2px 10px;
+    border-radius: 99px;
+    font-size: .65rem;
+  }
+  .mistakes-list {
+    max-height: 240px;
+    overflow-y: auto;
+  }
+  .mistake-item {
+    padding: 10px 18px;
+    border-bottom: 1px solid var(--border);
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 10px;
+    align-items: center;
+    font-size: .8rem;
+    text-align: left;
+  }
+  .mistake-item:last-child { border-bottom: none; }
+  .mistake-item .sw { color: var(--text); font-weight: 600; }
+  .mistake-item .arrow { color: var(--muted); }
+  .mistake-item .en {
+    color: var(--neon-green);
+    font-weight: 600;
+    text-shadow: 0 0 4px var(--neon-green);
+  }
+  .mistake-item .given {
+    display: block;
+    font-size: .65rem;
+    color: var(--neon-red);
+    text-decoration: line-through;
+    margin-top: 2px;
+  }
+  .perfect-banner {
+    background: rgba(0,255,136,.1);
+    border: 1px solid var(--neon-green);
+    color: var(--neon-green);
+    padding: 14px;
+    border-radius: 10px;
+    text-align: center;
+    width: 100%;
+    max-width: 380px;
+    margin-bottom: 18px;
+    font-weight: 700;
+    text-shadow: 0 0 8px var(--neon-green);
+    box-shadow: 0 0 20px rgba(0,255,136,.2);
+  }
+
   /* Spinner */
   .spinner {
     width: 36px;
@@ -538,6 +612,7 @@
       Swedish words fall from the top.<br>
       Pick the right English translation<br>
       <strong style="color:var(--neon-cyan)">before they hit the stack.</strong><br><br>
+      <span style="color:var(--neon-yellow);font-size:.7rem;text-shadow:0 0 6px var(--neon-yellow)">★ 5 in a row destroys a stacked block!</span><br>
       <span style="color:var(--muted);font-size:.7rem">5 stacked blocks = game over</span>
     </p>
     <button class="neon-btn pink" onclick="startGame()">▶ START GAME</button>
@@ -600,6 +675,7 @@
     <div class="stats-row"><span class="lbl">Final Speed</span><span class="val" id="end-speed">1.0x</span></div>
     <div class="stats-row"><span class="lbl">Best Ever</span><span class="val gold" id="end-best">0</span></div>
   </div>
+  <div id="mistakes-container"></div>
   <button class="neon-btn green" onclick="startGame()" style="max-width:380px">▶ PLAY AGAIN</button>
   <button class="neon-btn ghost" onclick="goToTitle()" style="max-width:380px;margin-top:10px">⏎ MAIN MENU</button>
 </div>
@@ -630,13 +706,14 @@ const state = {
   wordsTranslated: 0,
   streak: 0,
   bestStreak: 0,
-  stack: [],           // array of english strings (just for display in stack)
-  currentWord: null,   // {swedish, english}
+  stack: [],           // array of {english, blockEl} for animations
+  currentWord: null,
   blockEl: null,
   fallStartTime: 0,
   fallDuration: 0,
   rafId: null,
   answered: false,
+  mistakes: [],        // [{swedish, english, given}]
 };
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -727,6 +804,7 @@ function resetGame() {
   state.stack = [];
   state.currentWord = null;
   state.answered = false;
+  state.mistakes = [];
   if (state.blockEl) { state.blockEl.remove(); state.blockEl = null; }
   if (state.rafId) { cancelAnimationFrame(state.rafId); state.rafId = null; }
 
@@ -823,7 +901,7 @@ function onTimeOut() {
     if (norm(b.textContent) === norm(correct)) b.classList.add('correct');
   });
 
-  registerWrong();
+  registerWrong('(time out)');
 }
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -859,7 +937,7 @@ function answerChoice(btn, choice) {
   if (!isCorrect) btn.classList.add('wrong');
 
   if (isCorrect) registerCorrect();
-  else            registerWrong();
+  else            registerWrong(choice);
 }
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -881,6 +959,17 @@ function registerCorrect() {
   popBlock(state.blockEl, '#00ff88');
   showPointsPop(`+${total}`);
 
+  // 5-in-a-row destroys the top stack block!
+  // Triggers on streak 5, 10, 15, 20...
+  if (state.streak > 0 && state.streak % 5 === 0 && state.stack.length > 0) {
+    setTimeout(() => {
+      destroyTopStackBlock();
+      // Repositioning: blocks below the destroyed one don't need to move
+      // because we always stack from the bottom up. Removing the top means
+      // the next block lands one row higher again. ✓
+    }, 250);
+  }
+
   // Streak milestone effects
   if (state.streak === 3 || state.streak === 5 || state.streak === 8 ||
       state.streak === 10 || (state.streak > 10 && state.streak % 5 === 0)) {
@@ -891,13 +980,22 @@ function registerCorrect() {
   // Cancel current animation, spawn next after a tiny delay
   if (state.rafId) cancelAnimationFrame(state.rafId);
   state.blockEl = null;
-  setTimeout(() => spawnBlock(), 400);
+  // Slight extra delay if we destroyed a block, so the player sees it
+  const nextDelay = (state.streak % 5 === 0 && state.stack.length >= 0) ? 700 : 400;
+  setTimeout(() => spawnBlock(), nextDelay);
 
   updateStats();
 }
 
-function registerWrong() {
+function registerWrong(givenAnswer) {
   state.streak = 0;
+
+  // Record the mistake for the recap
+  state.mistakes.push({
+    swedish: state.currentWord.swedish,
+    english: state.currentWord.english,
+    given: givenAnswer || '(time out)',
+  });
 
   // Block lands on stack
   if (state.blockEl) {
@@ -927,7 +1025,38 @@ function landBlockOnStack(blockEl, word) {
   blockEl.textContent = `${word.swedish} → ${word.english}`;
   blockEl.style.top = topPct + '%';
 
-  state.stack.push(word.english);
+  state.stack.push({ english: word.english, blockEl });
+}
+
+function destroyTopStackBlock() {
+  if (state.stack.length === 0) return;
+  const removed = state.stack.pop();
+  const el = removed.blockEl;
+  if (!el) return;
+
+  const rect = el.getBoundingClientRect();
+  const cx = rect.left + rect.width / 2;
+  const cy = rect.top + rect.height / 2;
+
+  // Visual destruction — pulse, flash, particles
+  el.style.transition = 'transform .3s ease, opacity .3s ease, box-shadow .3s ease';
+  el.style.boxShadow = '0 0 40px var(--neon-yellow), 0 0 80px var(--neon-yellow)';
+  el.style.transform = 'scale(1.15)';
+  setTimeout(() => {
+    el.style.transform = 'scale(.3)';
+    el.style.opacity = '0';
+  }, 150);
+  setTimeout(() => el.remove(), 450);
+
+  burstParticles(cx, cy, '#ffd23f', 30);
+
+  // Big "BLOCK CLEARED!" combo display
+  const combo = $('combo-display');
+  combo.textContent = '★ BLOCK CLEARED! ★';
+  combo.style.color = '#ffd23f';
+  combo.classList.remove('show');
+  void combo.offsetWidth;
+  combo.classList.add('show');
 }
 
 function gameOver() {
@@ -935,7 +1064,7 @@ function gameOver() {
   if (state.rafId) cancelAnimationFrame(state.rafId);
 
   const isNewRecord = saveHighScore(state.score);
-  const win = state.wordsTranslated >= CONFIG.WORDS_TO_MAX_SPEED * 2; // arbitrary "you crushed it"
+  const win = state.wordsTranslated >= CONFIG.WORDS_TO_MAX_SPEED * 2;
 
   showScreen('end-screen');
   $('end-banner').textContent = win ? 'AMAZING!' : 'GAME OVER';
@@ -947,7 +1076,48 @@ function gameOver() {
   $('end-best').textContent = highScore;
   $('new-record-line').innerHTML = isNewRecord ? '<div class="new-record">★ NEW HIGH SCORE ★</div>' : '';
 
+  renderMistakesRecap();
+
   if (isNewRecord) confettiBurst(120);
+}
+
+function renderMistakesRecap() {
+  const container = $('mistakes-container');
+  if (state.mistakes.length === 0) {
+    if (state.wordsTranslated > 0) {
+      container.innerHTML = `<div class="perfect-banner">✨ PERFECT GAME — NO MISTAKES ✨</div>`;
+    } else {
+      container.innerHTML = '';
+    }
+    return;
+  }
+
+  const items = state.mistakes.map(m => `
+    <div class="mistake-item">
+      <div class="sw">${escapeHtml(m.swedish)}</div>
+      <div class="arrow">→</div>
+      <div>
+        <span class="en">${escapeHtml(m.english)}</span>
+        <span class="given">you: ${escapeHtml(m.given)}</span>
+      </div>
+    </div>
+  `).join('');
+
+  container.innerHTML = `
+    <div class="mistakes-recap">
+      <div class="mistakes-recap-header">
+        <span>📚 Words to review</span>
+        <span class="mistakes-count">${state.mistakes.length}</span>
+      </div>
+      <div class="mistakes-list">${items}</div>
+    </div>
+  `;
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  })[c]);
 }
 
 // ════════════════════════════════════════════════════════════════════════════
