@@ -1,0 +1,1279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Word Quest — Svenska RPG</title>
+<style>
+  /* ══ Pixel-perfect base ═══════════════════════════════════════════════ */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg-deep:    #0d0421;
+    --bg-night:   #1a0b3d;
+    --bg-mid:     #2d1b69;
+    --player:     #5be7c4;
+    --enemy:      #ff5577;
+    --hp-good:    #4ade80;
+    --hp-warn:    #fbbf24;
+    --hp-low:     #ef4444;
+    --gold:       #ffd23f;
+    --xp:         #8b5cf6;
+    --text:       #f5e6d3;
+    --shadow:     #08010a;
+    --accent:     #ff6b9d;
+    --pixel-size: 3px;
+  }
+
+  @font-face {
+    font-family: 'PixelGame';
+    src: url('https://cdn.jsdelivr.net/gh/google/fonts/ofl/pressstart2p/PressStart2P-Regular.ttf') format('truetype');
+  }
+
+  html, body {
+    background: var(--bg-deep);
+    color: var(--text);
+    font-family: 'PixelGame', 'Courier New', monospace;
+    image-rendering: pixelated;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: crisp-edges;
+    -webkit-font-smoothing: none;
+    -moz-osx-font-smoothing: grayscale;
+    min-height: 100vh;
+    overflow-x: hidden;
+    user-select: none;
+  }
+
+  body {
+    background:
+      repeating-linear-gradient(0deg, transparent 0, transparent 2px, rgba(0,0,0,.15) 2px, rgba(0,0,0,.15) 3px),
+      radial-gradient(ellipse at top, var(--bg-night) 0%, var(--bg-deep) 70%);
+  }
+
+  .screen { display: none; min-height: 100vh; }
+  .screen.active { display: block; }
+
+  /* ══ Title screen ═════════════════════════════════════════════════════ */
+  #title-screen {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    min-height: 100vh;
+    padding: 20px;
+    position: relative;
+  }
+  #title-screen.active { display: flex; }
+
+  .title-stars {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    overflow: hidden;
+  }
+  .star {
+    position: absolute;
+    background: var(--text);
+    width: var(--pixel-size);
+    height: var(--pixel-size);
+    animation: twinkle 2s infinite;
+  }
+  @keyframes twinkle { 0%,100% { opacity: 1; } 50% { opacity: .2; } }
+
+  .title-logo {
+    font-size: clamp(1.5rem, 5vw, 3rem);
+    color: var(--gold);
+    text-shadow:
+      var(--pixel-size) var(--pixel-size) 0 var(--accent),
+      calc(var(--pixel-size)*2) calc(var(--pixel-size)*2) 0 var(--shadow);
+    margin-bottom: 12px;
+    line-height: 1.5;
+    animation: title-bob 2s ease-in-out infinite;
+  }
+  @keyframes title-bob {
+    0%,100% { transform: translateY(0); }
+    50%     { transform: translateY(-6px); }
+  }
+
+  .title-subtitle {
+    font-size: .65rem;
+    color: var(--player);
+    margin-bottom: 40px;
+    letter-spacing: 2px;
+  }
+
+  .pixel-input {
+    font-family: 'PixelGame', monospace;
+    font-size: .75rem;
+    padding: 14px;
+    background: var(--bg-mid);
+    border: var(--pixel-size) solid var(--text);
+    color: var(--text);
+    width: 100%;
+    max-width: 320px;
+    margin-bottom: 16px;
+    text-align: center;
+    outline: none;
+  }
+  .pixel-input:focus { border-color: var(--gold); }
+
+  .pixel-btn {
+    font-family: 'PixelGame', monospace;
+    font-size: .75rem;
+    padding: 14px 22px;
+    background: var(--accent);
+    color: var(--text);
+    border: var(--pixel-size) solid var(--text);
+    cursor: pointer;
+    box-shadow:
+      0 var(--pixel-size) 0 var(--shadow),
+      inset 0 var(--pixel-size) 0 rgba(255,255,255,.2);
+    transition: transform .05s, box-shadow .05s;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .pixel-btn:hover { background: #ff85b3; }
+  .pixel-btn:active {
+    transform: translateY(var(--pixel-size));
+    box-shadow: 0 0 0 var(--shadow), inset 0 var(--pixel-size) 0 rgba(255,255,255,.2);
+  }
+  .pixel-btn.gold { background: var(--gold); color: var(--shadow); }
+  .pixel-btn.gold:hover { background: #ffe05c; }
+  .pixel-btn.green { background: var(--hp-good); color: var(--shadow); }
+  .pixel-btn.green:hover { background: #6df09a; }
+  .pixel-btn:disabled { opacity: .5; cursor: not-allowed; }
+
+  .blinking-prompt {
+    font-size: .7rem;
+    color: var(--gold);
+    margin-top: 12px;
+    animation: blink 1s steps(2) infinite;
+  }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  /* ══ Map screen ═══════════════════════════════════════════════════════ */
+  #map-screen { padding: 16px; max-width: 900px; margin: 0 auto; }
+
+  .map-topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 18px;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .map-title {
+    font-size: 1rem;
+    color: var(--gold);
+    text-shadow: var(--pixel-size) var(--pixel-size) 0 var(--shadow);
+  }
+  .stats-bar {
+    display: flex;
+    gap: 8px;
+    font-size: .6rem;
+    flex-wrap: wrap;
+  }
+  .stat-box {
+    background: var(--bg-mid);
+    border: var(--pixel-size) solid var(--text);
+    padding: 6px 10px;
+    box-shadow: 0 var(--pixel-size) 0 var(--shadow);
+  }
+  .stat-box.gold { color: var(--gold); }
+  .stat-box.xp   { color: var(--xp); }
+  .stat-box.lvl  { color: var(--player); }
+
+  .dungeon-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 14px;
+    margin-bottom: 30px;
+  }
+
+  .dungeon {
+    background: var(--bg-mid);
+    border: var(--pixel-size) solid var(--text);
+    padding: 14px 10px;
+    text-align: center;
+    cursor: pointer;
+    box-shadow:
+      0 var(--pixel-size) 0 var(--shadow),
+      inset 0 var(--pixel-size) 0 rgba(255,255,255,.1);
+    transition: transform .08s;
+    position: relative;
+  }
+  .dungeon:hover {
+    transform: translateY(calc(var(--pixel-size) * -1));
+    box-shadow:
+      0 calc(var(--pixel-size) * 2) 0 var(--shadow),
+      inset 0 var(--pixel-size) 0 rgba(255,255,255,.15);
+  }
+  .dungeon.locked {
+    background: #2a2030;
+    color: #6a5e72;
+    cursor: not-allowed;
+  }
+  .dungeon.locked:hover { transform: none; box-shadow: 0 var(--pixel-size) 0 var(--shadow); }
+  .dungeon.cleared { background: #2d4a3e; }
+
+  .dungeon-icon {
+    font-size: 1.6rem;
+    margin-bottom: 6px;
+    image-rendering: pixelated;
+  }
+  .dungeon-num {
+    font-size: .55rem;
+    color: var(--gold);
+    margin-bottom: 4px;
+  }
+  .dungeon-name {
+    font-size: .6rem;
+    line-height: 1.4;
+    margin-bottom: 6px;
+  }
+  .dungeon-stars {
+    font-size: .55rem;
+    color: var(--gold);
+    letter-spacing: 1px;
+  }
+
+  /* ══ Battle screen ════════════════════════════════════════════════════ */
+  #battle-screen {
+    display: none;
+    flex-direction: column;
+    min-height: 100vh;
+    padding: 12px;
+    max-width: 720px;
+    margin: 0 auto;
+  }
+  #battle-screen.active { display: flex; }
+
+  .battle-topbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    font-size: .55rem;
+  }
+  .quit-btn {
+    font-family: 'PixelGame', monospace;
+    font-size: .55rem;
+    background: transparent;
+    border: var(--pixel-size) solid var(--text);
+    color: var(--text);
+    padding: 8px 12px;
+    cursor: pointer;
+  }
+
+  .battle-arena {
+    background:
+      linear-gradient(180deg, var(--bg-night) 0%, var(--bg-mid) 100%);
+    border: var(--pixel-size) solid var(--text);
+    padding: 16px;
+    margin-bottom: 14px;
+    position: relative;
+    min-height: 280px;
+    overflow: hidden;
+    box-shadow: inset 0 var(--pixel-size) 0 rgba(255,255,255,.1);
+  }
+
+  /* ground line */
+  .battle-arena::after {
+    content: '';
+    position: absolute;
+    bottom: 60px;
+    left: 0; right: 0;
+    height: var(--pixel-size);
+    background: var(--text);
+    opacity: .2;
+  }
+
+  .combatant {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    position: absolute;
+    bottom: 60px;
+  }
+  .combatant.player { left: 24px; }
+  .combatant.enemy  { right: 24px; }
+
+  .sprite {
+    width: 64px; height: 64px;
+    image-rendering: pixelated;
+    transition: transform .15s;
+  }
+  .sprite.attacking-right { animation: attack-right .35s ease; }
+  .sprite.attacking-left  { animation: attack-left  .35s ease; }
+  @keyframes attack-right {
+    50% { transform: translateX(40px) scale(1.1); }
+  }
+  @keyframes attack-left {
+    50% { transform: translateX(-40px) scale(1.1); }
+  }
+  .sprite.hurt { animation: hurt .3s; }
+  @keyframes hurt {
+    0%,100% { filter: none; }
+    25%,75% { filter: brightness(2.5) hue-rotate(-30deg); transform: translateX(-4px); }
+    50%     { transform: translateX(4px); }
+  }
+  .sprite.dying {
+    animation: die 1s forwards;
+  }
+  @keyframes die {
+    0%   { opacity: 1; transform: scale(1) rotate(0deg); }
+    100% { opacity: 0; transform: scale(.3) rotate(180deg); }
+  }
+
+  .hp-bar {
+    width: 90px;
+    height: 12px;
+    background: var(--shadow);
+    border: var(--pixel-size) solid var(--text);
+    position: relative;
+    overflow: hidden;
+  }
+  .hp-fill {
+    height: 100%;
+    background: var(--hp-good);
+    transition: width .4s ease, background .3s;
+  }
+  .hp-fill.warn { background: var(--hp-warn); }
+  .hp-fill.low  { background: var(--hp-low); animation: hp-flash .6s infinite; }
+  @keyframes hp-flash { 50% { opacity: .5; } }
+
+  .name-tag {
+    font-size: .55rem;
+    text-align: center;
+    line-height: 1.3;
+  }
+  .name-tag.player { color: var(--player); }
+  .name-tag.enemy  { color: var(--enemy);  }
+
+  /* Damage numbers floating up */
+  .damage-num {
+    position: absolute;
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: var(--accent);
+    text-shadow: var(--pixel-size) var(--pixel-size) 0 var(--shadow);
+    pointer-events: none;
+    animation: damage-float 1s ease-out forwards;
+  }
+  .damage-num.heal  { color: var(--hp-good); }
+  .damage-num.crit  { color: var(--gold); font-size: 1.6rem; }
+  @keyframes damage-float {
+    0%   { transform: translateY(0)    scale(.5); opacity: 0; }
+    20%  { transform: translateY(-15px) scale(1.3); opacity: 1; }
+    100% { transform: translateY(-60px) scale(1);  opacity: 0; }
+  }
+
+  /* Question + choices */
+  .question-card {
+    background: var(--bg-mid);
+    border: var(--pixel-size) solid var(--text);
+    padding: 16px;
+    text-align: center;
+    margin-bottom: 12px;
+    box-shadow:
+      0 var(--pixel-size) 0 var(--shadow),
+      inset 0 var(--pixel-size) 0 rgba(255,255,255,.1);
+  }
+  .question-prompt { font-size: .55rem; color: var(--gold); margin-bottom: 8px; }
+  .question-word {
+    font-size: 1.4rem;
+    color: var(--text);
+    text-shadow: var(--pixel-size) var(--pixel-size) 0 var(--shadow);
+  }
+
+  .choice-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  .choice-pixel {
+    font-family: 'PixelGame', monospace;
+    font-size: .65rem;
+    padding: 14px 10px;
+    background: var(--bg-mid);
+    border: var(--pixel-size) solid var(--text);
+    color: var(--text);
+    cursor: pointer;
+    box-shadow: 0 var(--pixel-size) 0 var(--shadow);
+    line-height: 1.4;
+    transition: all .1s;
+    text-align: center;
+  }
+  .choice-pixel:hover:not(:disabled) {
+    background: var(--accent);
+    transform: translateY(calc(var(--pixel-size) * -.5));
+    box-shadow: 0 calc(var(--pixel-size) * 1.5) 0 var(--shadow);
+  }
+  .choice-pixel.correct {
+    background: var(--hp-good);
+    color: var(--shadow);
+    animation: correct-flash .5s;
+  }
+  .choice-pixel.wrong {
+    background: var(--hp-low);
+    color: var(--text);
+    animation: wrong-shake .4s;
+  }
+  .choice-pixel:disabled { cursor: default; }
+  @keyframes correct-flash {
+    0%,100% { transform: scale(1); }
+    50%     { transform: scale(1.05); }
+  }
+  @keyframes wrong-shake {
+    0%,100% { transform: translateX(0); }
+    25%     { transform: translateX(-6px); }
+    75%     { transform: translateX(6px); }
+  }
+
+  .battle-progress {
+    height: 14px;
+    background: var(--shadow);
+    border: var(--pixel-size) solid var(--text);
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 4px;
+  }
+  .battle-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--xp), var(--accent));
+    transition: width .3s;
+  }
+  .battle-meta {
+    font-size: .5rem;
+    text-align: center;
+    color: var(--gold);
+  }
+
+  /* Rage meter */
+  .rage-meter {
+    height: 8px;
+    background: var(--shadow);
+    border: var(--pixel-size) solid var(--text);
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 10px;
+  }
+  .rage-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #ff8800, #ff0000);
+    transition: width .3s;
+    width: 0%;
+  }
+  .rage-fill.full {
+    animation: rage-pulse .5s infinite;
+  }
+  @keyframes rage-pulse {
+    0%,100% { box-shadow: 0 0 8px var(--enemy); }
+    50%     { box-shadow: 0 0 20px var(--enemy); }
+  }
+  .rage-label {
+    font-size: .5rem;
+    color: var(--gold);
+    text-align: center;
+    margin-bottom: 4px;
+  }
+  .rage-btn {
+    width: 100%;
+    margin-bottom: 12px;
+  }
+
+  /* ══ Result screen ════════════════════════════════════════════════════ */
+  #result-screen { padding: 30px 16px; max-width: 500px; margin: 0 auto; text-align: center; }
+
+  .result-banner {
+    font-size: 2rem;
+    color: var(--gold);
+    text-shadow: var(--pixel-size) var(--pixel-size) 0 var(--shadow);
+    margin-bottom: 20px;
+    animation: result-bounce .6s;
+  }
+  .result-banner.lose { color: var(--enemy); }
+  @keyframes result-bounce {
+    0%   { transform: scale(0); }
+    60%  { transform: scale(1.2); }
+    100% { transform: scale(1); }
+  }
+
+  .result-stats {
+    background: var(--bg-mid);
+    border: var(--pixel-size) solid var(--text);
+    padding: 18px;
+    margin-bottom: 18px;
+    font-size: .65rem;
+    line-height: 1.8;
+    box-shadow: 0 var(--pixel-size) 0 var(--shadow);
+  }
+  .result-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgba(255,255,255,.1);
+    padding: 6px 0;
+  }
+  .result-row:last-child { border-bottom: none; }
+  .result-row .v { color: var(--gold); }
+
+  .result-actions {
+    display: flex;
+    gap: 10px;
+    flex-direction: column;
+  }
+
+  .stars-row {
+    font-size: 1.5rem;
+    color: var(--gold);
+    text-shadow: var(--pixel-size) var(--pixel-size) 0 var(--shadow);
+    margin: 10px 0;
+  }
+  .stars-row .empty { color: #4a3a55; }
+
+  /* Level up banner */
+  .level-up {
+    position: fixed;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    background: var(--gold);
+    color: var(--shadow);
+    padding: 24px 40px;
+    border: var(--pixel-size) solid var(--shadow);
+    box-shadow: 0 var(--pixel-size) 0 var(--shadow);
+    font-size: 1.2rem;
+    z-index: 1000;
+    animation: levelup .25s;
+    text-align: center;
+  }
+  @keyframes levelup { from { transform: translate(-50%, -50%) scale(0); } }
+  .level-up-sub {
+    font-size: .55rem;
+    margin-top: 8px;
+    color: var(--shadow);
+  }
+
+  /* Effects layer */
+  .fx-layer {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    overflow: hidden;
+    z-index: 50;
+  }
+  .pixel-particle {
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    pointer-events: none;
+  }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--bg-mid);
+    border: var(--pixel-size) solid var(--text);
+    color: var(--gold);
+    padding: 12px 18px;
+    font-size: .6rem;
+    box-shadow: 0 var(--pixel-size) 0 var(--shadow);
+    z-index: 200;
+    animation: toast-in .3s;
+  }
+  @keyframes toast-in {
+    from { transform: translate(-50%, 30px); opacity: 0; }
+    to   { transform: translate(-50%, 0);    opacity: 1; }
+  }
+
+  /* Mobile */
+  @media (max-width: 480px) {
+    .dungeon-grid { grid-template-columns: 1fr 1fr; }
+    .battle-arena { min-height: 240px; }
+    .sprite { width: 52px; height: 52px; }
+    .question-word { font-size: 1.1rem; }
+    .choice-pixel { font-size: .55rem; padding: 12px 6px; }
+    .title-logo { font-size: 1.3rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="fx-layer" id="fx-layer"></div>
+
+<!-- ════════ TITLE ════════ -->
+<div class="screen active" id="title-screen">
+  <div class="title-stars" id="stars"></div>
+  <div class="title-logo">⚔️ WORD<br>QUEST ⚔️</div>
+  <div class="title-subtitle">A SVENSKA RPG</div>
+  <input type="text" class="pixel-input" id="hero-name" placeholder="HERO NAME..." maxlength="12" />
+  <button class="pixel-btn gold" onclick="startGame()">▶ BEGIN QUEST</button>
+  <div class="blinking-prompt">▼ ENTER YOUR NAME ▼</div>
+</div>
+
+<!-- ════════ MAP ════════ -->
+<div class="screen" id="map-screen">
+  <div class="map-topbar">
+    <div class="map-title" id="hero-title">⚔️ HERO</div>
+    <div class="stats-bar">
+      <div class="stat-box lvl">LV <span id="stat-level">1</span></div>
+      <div class="stat-box xp">XP <span id="stat-xp">0</span>/<span id="stat-xp-needed">100</span></div>
+      <div class="stat-box gold">💰 <span id="stat-gold">0</span></div>
+    </div>
+  </div>
+  <div class="dungeon-grid" id="dungeon-grid"></div>
+  <div style="text-align:center; margin-top: 20px;">
+    <button class="pixel-btn" onclick="resetSave()" style="font-size:.5rem; opacity:.5">⟲ Reset Save</button>
+  </div>
+</div>
+
+<!-- ════════ BATTLE ════════ -->
+<div class="screen" id="battle-screen">
+  <div class="battle-topbar">
+    <button class="quit-btn" onclick="quitBattle()">⏎ FLEE</button>
+    <span id="dungeon-label">DUNGEON 1</span>
+  </div>
+
+  <div class="battle-arena" id="battle-arena">
+    <div class="combatant player">
+      <div class="hp-bar"><div class="hp-fill" id="player-hp"></div></div>
+      <svg class="sprite" id="player-sprite" viewBox="0 0 16 16"></svg>
+      <div class="name-tag player" id="player-name">HERO</div>
+    </div>
+    <div class="combatant enemy">
+      <div class="hp-bar"><div class="hp-fill" id="enemy-hp"></div></div>
+      <svg class="sprite" id="enemy-sprite" viewBox="0 0 16 16"></svg>
+      <div class="name-tag enemy" id="enemy-name">TROLL</div>
+    </div>
+  </div>
+
+  <div class="rage-label">RAGE METER</div>
+  <div class="rage-meter"><div class="rage-fill" id="rage-fill"></div></div>
+  <button class="pixel-btn gold rage-btn" id="rage-btn" onclick="useRage()" disabled>⚡ UNLEASH RAGE!</button>
+
+  <div class="question-card">
+    <div class="question-prompt" id="q-prompt">SWEDISH</div>
+    <div class="question-word" id="q-word">—</div>
+  </div>
+
+  <div class="choice-grid" id="choice-grid"></div>
+
+  <div class="battle-progress"><div class="battle-progress-fill" id="battle-progress-fill"></div></div>
+  <div class="battle-meta">
+    <span id="battle-meta-text">ENEMY 1 / 5</span> · STREAK <span id="streak-count">0</span>
+  </div>
+</div>
+
+<!-- ════════ RESULT ════════ -->
+<div class="screen" id="result-screen">
+  <div class="result-banner" id="result-banner">VICTORY!</div>
+  <div class="stars-row" id="stars-row">★★★</div>
+  <div class="result-stats" id="result-stats"></div>
+  <div class="result-actions">
+    <button class="pixel-btn green" onclick="goToMap()">⏎ TO MAP</button>
+    <button class="pixel-btn" onclick="retryDungeon()">⟲ RETRY</button>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════════════════════════════════════════
+// DATA
+// ════════════════════════════════════════════════════════════════════════════
+const MAX_DUNGEONS = 38;
+
+const ENEMIES = [
+  { name: 'GRUMP', emoji: '👺', color: '#a3e635', hp: 3 },
+  { name: 'GHOUL', emoji: '👻', color: '#e0e7ff', hp: 4 },
+  { name: 'WOLF',  emoji: '🐺', color: '#9ca3af', hp: 4 },
+  { name: 'ORC',   emoji: '👹', color: '#65a30d', hp: 5 },
+  { name: 'WITCH', emoji: '🧙', color: '#a78bfa', hp: 5 },
+  { name: 'TROLL', emoji: '🧌', color: '#fb923c', hp: 6 },
+  { name: 'BEAST', emoji: '🦂', color: '#dc2626', hp: 6 },
+  { name: 'WRAITH',emoji: '💀', color: '#94a3b8', hp: 7 },
+];
+const BOSSES = [
+  { name: 'DRAGON',  emoji: '🐉', color: '#dc2626', hp: 12 },
+  { name: 'KRAKEN',  emoji: '🦑', color: '#1e40af', hp: 12 },
+  { name: 'PHOENIX', emoji: '🔥', color: '#fb923c', hp: 14 },
+  { name: 'LICH',    emoji: '☠️',  color: '#7c3aed', hp: 14 },
+];
+
+const DUNGEON_THEMES = [
+  { name: 'GREEN PLAINS',  icon: '🌿' },
+  { name: 'DARK FOREST',   icon: '🌲' },
+  { name: 'OLD CAVE',      icon: '🪨' },
+  { name: 'FROZEN PEAKS',  icon: '🏔️' },
+  { name: 'LAVA HOLLOW',   icon: '🌋' },
+  { name: 'SUNKEN TEMPLE', icon: '🏛️' },
+  { name: 'SHADOW REALM',  icon: '🌑' },
+  { name: 'STAR FOUNTAIN', icon: '⭐' },
+];
+
+// ════════════════════════════════════════════════════════════════════════════
+// STATE  (saved in localStorage — completely independent from main app)
+// ════════════════════════════════════════════════════════════════════════════
+const SAVE_KEY = 'svenska-quest-save-v1';
+let save = null;
+
+function defaultSave() {
+  return {
+    name: 'HERO',
+    level: 1,
+    xp: 0,
+    gold: 0,
+    cleared: {},  // { "5": 3 }  → dungeon 5 cleared with 3 stars
+  };
+}
+function loadSave() {
+  try {
+    const stored = localStorage.getItem(SAVE_KEY);
+    save = stored ? JSON.parse(stored) : null;
+  } catch { save = null; }
+}
+function persistSave() { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); }
+function xpForLevel(lvl) { return 100 + (lvl - 1) * 50; }
+function maxHpForLevel(lvl) { return 8 + Math.floor(lvl / 2); }
+function damagePerHit(lvl) { return 1 + Math.floor(lvl / 3); }
+
+// In-battle state
+const battle = {
+  dungeon: 0,
+  words: [],
+  enemyIdx: 0,
+  enemyHp: 0,
+  enemyMaxHp: 0,
+  enemyConfig: null,
+  isBoss: false,
+  playerHp: 0,
+  playerMaxHp: 0,
+  rage: 0,
+  streak: 0,
+  bestStreak: 0,
+  correctCount: 0,
+  wrongCount: 0,
+  answered: false,
+  questionWord: null,
+  enemiesDefeated: 0,
+  totalEnemies: 0,
+  startTime: 0,
+};
+
+// ════════════════════════════════════════════════════════════════════════════
+// HELPERS
+// ════════════════════════════════════════════════════════════════════════════
+const $ = id => document.getElementById(id);
+const shuffle = arr => arr.slice().sort(() => Math.random() - .5);
+const norm = s => s.toLowerCase().trim();
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  $(id).classList.add('active');
+}
+
+function toast(msg, ms = 1800) {
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), ms);
+}
+
+// Generate stars on title screen
+function spawnStars() {
+  const layer = $('stars');
+  layer.innerHTML = '';
+  for (let i = 0; i < 60; i++) {
+    const s = document.createElement('div');
+    s.className = 'star';
+    s.style.left = Math.random() * 100 + '%';
+    s.style.top  = Math.random() * 100 + '%';
+    s.style.animationDelay = Math.random() * 2 + 's';
+    layer.appendChild(s);
+  }
+}
+spawnStars();
+
+// ════════════════════════════════════════════════════════════════════════════
+// PIXEL SPRITES (drawn as inline SVG <rect> grids — true 16x16 pixel art)
+// ════════════════════════════════════════════════════════════════════════════
+function pixelSprite(svgEl, grid, palette) {
+  // grid is a 16x16 string array, each char maps to a palette index ('0' = transparent)
+  svgEl.innerHTML = '';
+  for (let y = 0; y < grid.length; y++) {
+    for (let x = 0; x < grid[y].length; x++) {
+      const c = grid[y][x];
+      if (c === '.' || c === '0') continue;
+      const r = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      r.setAttribute('x', x);
+      r.setAttribute('y', y);
+      r.setAttribute('width', 1);
+      r.setAttribute('height', 1);
+      r.setAttribute('fill', palette[c] || '#fff');
+      svgEl.appendChild(r);
+    }
+  }
+}
+
+const HERO_GRID = [
+  '....11111111....',
+  '...1ssssssss1...',
+  '..1ssssssssss1..',
+  '..1ss11ss11ss1..',
+  '..1ssssssssss1..',
+  '..1ss1ssss1ss1..',
+  '..1sss1111sss1..',
+  '...1ssssssss1...',
+  '..1aaaaaaaaaa1..',
+  '.1abbbbbbbbbba1.',
+  '1abbbbbbbbbbba1.',
+  '1abbbbbbbbbbbba1',
+  '.1bbbbbbbbbbbb1.',
+  '..1bb1.....1bb1.',
+  '..1bb1.....1bb1.',
+  '..ccc1.....1ccc.',
+];
+const HERO_PAL = {
+  '1': '#08010a',  // outline
+  's': '#fdba74',  // skin
+  'a': '#5be7c4',  // armor accent
+  'b': '#3b82f6',  // armor body
+  'c': '#451a03',  // boots
+};
+
+function drawHero() {
+  pixelSprite($('player-sprite'), HERO_GRID, HERO_PAL);
+}
+
+// Enemy sprite — varied by enemy color
+function drawEnemy(color) {
+  const ENEMY_GRID = [
+    '................',
+    '...11......11...',
+    '..1cc1....1cc1..',
+    '.1cccc1..1cccc1.',
+    '1cccccc11cccccc1',
+    '1cccccccccccccc1',
+    '1cc1cccccccc1cc1',
+    '1c1c1cccccc1c1c1',
+    '1c1c1cccccc1c1c1',
+    '1cc1cccccccc1cc1',
+    '1ccccc1ww1ccccc1',
+    '1cccc1wwww1cccc1',
+    '.1ccc1wwww1ccc1.',
+    '..1ccc1wwc1cc1..',
+    '...1cccccccc1...',
+    '....11111111....',
+  ];
+  const pal = { '1': '#08010a', 'c': color, 'w': '#08010a' };
+  pixelSprite($('enemy-sprite'), ENEMY_GRID, pal);
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// BOOT
+// ════════════════════════════════════════════════════════════════════════════
+loadSave();
+if (save && save.name) {
+  $('hero-name').value = save.name;
+}
+
+$('hero-name').addEventListener('keydown', e => {
+  if (e.key === 'Enter') startGame();
+});
+
+function startGame() {
+  const name = $('hero-name').value.trim().toUpperCase() || 'HERO';
+  if (!save) save = defaultSave();
+  save.name = name;
+  persistSave();
+  goToMap();
+}
+
+function resetSave() {
+  if (!confirm('Wipe your quest progress?')) return;
+  localStorage.removeItem(SAVE_KEY);
+  save = null;
+  showScreen('title-screen');
+  $('hero-name').value = '';
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// MAP SCREEN
+// ════════════════════════════════════════════════════════════════════════════
+function goToMap() {
+  showScreen('map-screen');
+  renderMap();
+}
+
+function renderMap() {
+  $('hero-title').textContent = `⚔️ ${save.name}`;
+  $('stat-level').textContent = save.level;
+  $('stat-xp').textContent = save.xp;
+  $('stat-xp-needed').textContent = xpForLevel(save.level);
+  $('stat-gold').textContent = save.gold;
+
+  const grid = $('dungeon-grid');
+  grid.innerHTML = '';
+  for (let i = 1; i <= MAX_DUNGEONS; i++) {
+    const stars = save.cleared[i] || 0;
+    const prevCleared = i === 1 || save.cleared[i - 1] >= 1;
+    const isBoss = (i % 10 === 0);
+    const themeIdx = (i - 1) % DUNGEON_THEMES.length;
+    const theme = DUNGEON_THEMES[themeIdx];
+
+    const card = document.createElement('div');
+    card.className = 'dungeon';
+    if (!prevCleared) card.classList.add('locked');
+    if (stars >= 1)   card.classList.add('cleared');
+
+    card.innerHTML = `
+      <div class="dungeon-icon">${isBoss ? '👑' : theme.icon}</div>
+      <div class="dungeon-num">DUNGEON ${i}</div>
+      <div class="dungeon-name">${isBoss ? 'BOSS LAIR' : theme.name}</div>
+      <div class="dungeon-stars">${stars > 0 ? '★'.repeat(stars) + '☆'.repeat(3 - stars) : '★★★'.split('').map(()=>'<span style="opacity:.3">☆</span>').join('')}</div>
+    `;
+    if (prevCleared) card.onclick = () => startBattle(i);
+    grid.appendChild(card);
+  }
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// BATTLE
+// ════════════════════════════════════════════════════════════════════════════
+async function startBattle(dungeonNum) {
+  // Fetch words from existing API (read-only; no schema change)
+  let words;
+  try {
+    const r = await fetch(`/api/words/${dungeonNum}`);
+    if (!r.ok) throw new Error('Could not load words');
+    const data = await r.json();
+    words = data.words;
+  } catch (e) {
+    toast('⚠ Could not load words. Are you online?');
+    return;
+  }
+  if (!words || words.length < 4) {
+    toast('⚠ Not enough words in this dungeon.');
+    return;
+  }
+
+  battle.dungeon = dungeonNum;
+  battle.words = words;
+  battle.totalEnemies = 5;
+  battle.enemiesDefeated = 0;
+  battle.playerMaxHp = maxHpForLevel(save.level);
+  battle.playerHp = battle.playerMaxHp;
+  battle.rage = 0;
+  battle.streak = 0;
+  battle.bestStreak = 0;
+  battle.correctCount = 0;
+  battle.wrongCount = 0;
+  battle.startTime = Date.now();
+
+  showScreen('battle-screen');
+  $('dungeon-label').textContent = `DUNGEON ${dungeonNum}`;
+  $('player-name').textContent = save.name;
+  drawHero();
+  updateBattleUI();
+  spawnEnemy();
+  nextQuestion();
+}
+
+function spawnEnemy() {
+  const isLastEnemy = (battle.enemiesDefeated === battle.totalEnemies - 1);
+  const isBossDungeon = (battle.dungeon % 10 === 0);
+  battle.isBoss = isLastEnemy && isBossDungeon;
+
+  if (battle.isBoss) {
+    battle.enemyConfig = BOSSES[Math.floor(Math.random() * BOSSES.length)];
+  } else {
+    // Scale enemy hp slightly with dungeon level
+    const pool = ENEMIES.filter(e => e.hp <= 4 + Math.floor(battle.dungeon / 5));
+    battle.enemyConfig = (pool.length ? pool : ENEMIES)[Math.floor(Math.random() * (pool.length || ENEMIES.length))];
+  }
+  battle.enemyMaxHp = battle.enemyConfig.hp;
+  battle.enemyHp = battle.enemyMaxHp;
+  $('enemy-name').textContent = battle.enemyConfig.name + (battle.isBoss ? ' 👑' : '');
+  drawEnemy(battle.enemyConfig.color);
+  updateBattleUI();
+}
+
+function updateBattleUI() {
+  // HP bars
+  const phpPct = (battle.playerHp / battle.playerMaxHp) * 100;
+  const ehpPct = (battle.enemyHp / battle.enemyMaxHp) * 100;
+  const php = $('player-hp'), ehp = $('enemy-hp');
+  php.style.width = phpPct + '%';
+  php.classList.toggle('warn', phpPct <= 50);
+  php.classList.toggle('low',  phpPct <= 25);
+  ehp.style.width = ehpPct + '%';
+  ehp.classList.toggle('warn', ehpPct <= 50);
+  ehp.classList.toggle('low',  ehpPct <= 25);
+
+  $('battle-meta-text').textContent = `ENEMY ${battle.enemiesDefeated + 1} / ${battle.totalEnemies}`;
+  $('streak-count').textContent = battle.streak;
+  $('battle-progress-fill').style.width = (battle.enemiesDefeated / battle.totalEnemies * 100) + '%';
+
+  // Rage meter (fills from 0..100; 100 = ready)
+  const rfill = $('rage-fill');
+  rfill.style.width = battle.rage + '%';
+  rfill.classList.toggle('full', battle.rage >= 100);
+  $('rage-btn').disabled = battle.rage < 100;
+}
+
+function nextQuestion() {
+  battle.answered = false;
+  const word = battle.words[Math.floor(Math.random() * battle.words.length)];
+  battle.questionWord = word;
+  $('q-prompt').textContent = 'TRANSLATE FROM SWEDISH';
+  $('q-word').textContent = word.swedish;
+
+  // Pick 3 wrong answers
+  const others = battle.words
+    .filter(w => w !== word)
+    .sort(() => Math.random() - .5)
+    .slice(0, 3)
+    .map(w => w.english);
+
+  const choices = shuffle([word.english, ...others]);
+  const grid = $('choice-grid');
+  grid.innerHTML = '';
+  choices.forEach(c => {
+    const btn = document.createElement('button');
+    btn.className = 'choice-pixel';
+    btn.textContent = c;
+    btn.onclick = () => answer(btn, c, word.english, grid);
+    grid.appendChild(btn);
+  });
+}
+
+function answer(btn, choice, correct, grid) {
+  if (battle.answered) return;
+  battle.answered = true;
+  const isCorrect = norm(choice) === norm(correct);
+
+  grid.querySelectorAll('.choice-pixel').forEach(b => {
+    b.disabled = true;
+    if (norm(b.textContent) === norm(correct)) b.classList.add('correct');
+  });
+  if (!isCorrect) btn.classList.add('wrong');
+
+  if (isCorrect) {
+    battle.correctCount++;
+    battle.streak++;
+    if (battle.streak > battle.bestStreak) battle.bestStreak = battle.streak;
+    battle.rage = Math.min(100, battle.rage + 15);
+    onPlayerHit();
+  } else {
+    battle.wrongCount++;
+    battle.streak = 0;
+    onEnemyHit(correct);
+  }
+}
+
+function onPlayerHit() {
+  // Player attacks enemy
+  $('player-sprite').classList.add('attacking-right');
+  setTimeout(() => $('player-sprite').classList.remove('attacking-right'), 350);
+
+  const isCrit = battle.streak >= 3 && Math.random() < 0.3;
+  const dmg = damagePerHit(save.level) * (isCrit ? 2 : 1);
+
+  setTimeout(() => {
+    battle.enemyHp = Math.max(0, battle.enemyHp - dmg);
+    floatDamage($('enemy-sprite'), `-${dmg}${isCrit ? ' CRIT!' : ''}`, isCrit ? 'crit' : '');
+    $('enemy-sprite').classList.add('hurt');
+    setTimeout(() => $('enemy-sprite').classList.remove('hurt'), 300);
+    pixelBurst($('enemy-sprite'), battle.enemyConfig.color);
+    updateBattleUI();
+
+    if (battle.enemyHp <= 0) {
+      defeatEnemy();
+    } else {
+      setTimeout(nextQuestion, 700);
+    }
+  }, 200);
+}
+
+function onEnemyHit(correctAnswer) {
+  // Enemy attacks player
+  setTimeout(() => {
+    $('enemy-sprite').classList.add('attacking-left');
+    setTimeout(() => $('enemy-sprite').classList.remove('attacking-left'), 350);
+    setTimeout(() => {
+      const dmg = battle.isBoss ? 2 : 1;
+      battle.playerHp = Math.max(0, battle.playerHp - dmg);
+      floatDamage($('player-sprite'), `-${dmg}`);
+      $('player-sprite').classList.add('hurt');
+      setTimeout(() => $('player-sprite').classList.remove('hurt'), 300);
+      pixelBurst($('player-sprite'), '#ef4444');
+      updateBattleUI();
+
+      if (battle.playerHp <= 0) {
+        endBattle(false);
+      } else {
+        setTimeout(nextQuestion, 900);
+      }
+    }, 200);
+  }, 400);
+}
+
+function useRage() {
+  if (battle.rage < 100) return;
+  battle.rage = 0;
+  updateBattleUI();
+  // Massive damage burst
+  const burstDmg = damagePerHit(save.level) * 4;
+  $('player-sprite').classList.add('attacking-right');
+  setTimeout(() => $('player-sprite').classList.remove('attacking-right'), 350);
+  setTimeout(() => {
+    battle.enemyHp = Math.max(0, battle.enemyHp - burstDmg);
+    floatDamage($('enemy-sprite'), `-${burstDmg} RAGE!`, 'crit');
+    $('enemy-sprite').classList.add('hurt');
+    pixelBurst($('enemy-sprite'), '#ff0000', 25);
+    setTimeout(() => $('enemy-sprite').classList.remove('hurt'), 400);
+    updateBattleUI();
+    if (battle.enemyHp <= 0) defeatEnemy();
+  }, 200);
+}
+
+function defeatEnemy() {
+  $('enemy-sprite').classList.add('dying');
+  pixelBurst($('enemy-sprite'), '#ffd23f', 35);
+  setTimeout(() => {
+    battle.enemiesDefeated++;
+    if (battle.enemiesDefeated >= battle.totalEnemies) {
+      endBattle(true);
+    } else {
+      // Heal a little between enemies
+      battle.playerHp = Math.min(battle.playerMaxHp, battle.playerHp + 1);
+      $('enemy-sprite').classList.remove('dying');
+      spawnEnemy();
+      setTimeout(nextQuestion, 500);
+    }
+  }, 1000);
+}
+
+function quitBattle() {
+  if (confirm('Flee the dungeon? You lose your progress.')) {
+    goToMap();
+  }
+}
+
+function endBattle(won) {
+  if (won) {
+    // Compute stars: 3 = no damage, 2 = >50% hp, 1 = survived
+    const hpPct = battle.playerHp / battle.playerMaxHp;
+    let stars = 1;
+    if (hpPct >= 1.0) stars = 3;
+    else if (hpPct >= 0.5) stars = 2;
+    const prevStars = save.cleared[battle.dungeon] || 0;
+    save.cleared[battle.dungeon] = Math.max(prevStars, stars);
+
+    // XP & gold
+    const xpGained = battle.correctCount * 10 + battle.bestStreak * 5 + (stars * 25);
+    const goldGained = battle.correctCount * 2 + (battle.dungeon * 3) + (stars * 10);
+    const oldLevel = save.level;
+    save.xp += xpGained;
+    save.gold += goldGained;
+    while (save.xp >= xpForLevel(save.level)) {
+      save.xp -= xpForLevel(save.level);
+      save.level++;
+    }
+    persistSave();
+
+    showResult(true, { stars, xpGained, goldGained, leveledUp: save.level > oldLevel, newLevel: save.level });
+  } else {
+    showResult(false, {});
+  }
+}
+
+function showResult(won, data) {
+  showScreen('result-screen');
+  const banner = $('result-banner');
+  if (won) {
+    banner.textContent = 'VICTORY!';
+    banner.classList.remove('lose');
+    $('stars-row').innerHTML =
+      '★'.repeat(data.stars) + `<span class="empty">${'★'.repeat(3 - data.stars)}</span>`;
+    $('result-stats').innerHTML = `
+      <div class="result-row"><span>ENEMIES SLAIN</span><span class="v">${battle.enemiesDefeated}</span></div>
+      <div class="result-row"><span>BEST STREAK</span><span class="v">${battle.bestStreak}🔥</span></div>
+      <div class="result-row"><span>HP REMAINING</span><span class="v">${battle.playerHp}/${battle.playerMaxHp}</span></div>
+      <div class="result-row"><span>XP GAINED</span><span class="v">+${data.xpGained}</span></div>
+      <div class="result-row"><span>GOLD EARNED</span><span class="v">+${data.goldGained} 💰</span></div>
+    `;
+    if (data.leveledUp) {
+      setTimeout(() => showLevelUp(data.newLevel), 600);
+    }
+  } else {
+    banner.textContent = 'DEFEATED...';
+    banner.classList.add('lose');
+    $('stars-row').innerHTML = '<span class="empty">☆☆☆</span>';
+    $('result-stats').innerHTML = `
+      <div class="result-row"><span>ENEMIES SLAIN</span><span class="v">${battle.enemiesDefeated} / ${battle.totalEnemies}</span></div>
+      <div class="result-row"><span>BEST STREAK</span><span class="v">${battle.bestStreak}🔥</span></div>
+      <div class="result-row"><span>BETTER LUCK NEXT TIME</span><span class="v">⚔️</span></div>
+    `;
+  }
+}
+
+function showLevelUp(newLevel) {
+  const el = document.createElement('div');
+  el.className = 'level-up';
+  el.innerHTML = `LEVEL UP!<div class="level-up-sub">YOU ARE NOW LEVEL ${newLevel}</div>`;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 2200);
+}
+
+function retryDungeon() { startBattle(battle.dungeon); }
+
+// ════════════════════════════════════════════════════════════════════════════
+// VISUAL EFFECTS
+// ════════════════════════════════════════════════════════════════════════════
+function floatDamage(targetEl, text, extraClass = '') {
+  const rect = targetEl.getBoundingClientRect();
+  const el = document.createElement('div');
+  el.className = 'damage-num ' + extraClass;
+  el.textContent = text;
+  el.style.left = (rect.left + rect.width / 2) + 'px';
+  el.style.top  = (rect.top - 10) + 'px';
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 1000);
+}
+
+function pixelBurst(targetEl, color, count = 12) {
+  const rect = targetEl.getBoundingClientRect();
+  const cx = rect.left + rect.width / 2;
+  const cy = rect.top  + rect.height / 2;
+  const layer = $('fx-layer');
+
+  for (let i = 0; i < count; i++) {
+    const p = document.createElement('div');
+    p.className = 'pixel-particle';
+    p.style.background = color;
+    p.style.left = cx + 'px';
+    p.style.top  = cy + 'px';
+    layer.appendChild(p);
+
+    const angle = (Math.PI * 2 * i) / count + (Math.random() * 0.4);
+    const dist  = 40 + Math.random() * 60;
+    const dur   = 500 + Math.random() * 300;
+
+    p.animate(
+      [
+        { transform: 'translate(-50%, -50%) scale(1)', opacity: 1 },
+        { transform: `translate(${Math.cos(angle)*dist - 4}px, ${Math.sin(angle)*dist - 4}px) scale(0)`, opacity: 0 },
+      ],
+      { duration: dur, easing: 'ease-out', fill: 'forwards' }
+    ).onfinish = () => p.remove();
+  }
+}
+</script>
+</body>
+</html>
