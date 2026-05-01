@@ -578,6 +578,7 @@
 <div class="topbar" id="topbar" style="display:none">
   <div class="topbar-logo" onclick="showDashboard()">Svenska</div>
   <div class="topbar-user">
+    <button class="btn btn-ghost btn-sm" id="sound-toggle" onclick="toggleSound()" title="Toggle sound" style="padding:8px 10px">🔊</button>
     <div class="avatar" id="avatar-initial">?</div>
     <span id="topbar-username" style="font-size:.9rem"></span>
     <button class="btn btn-ghost btn-sm" onclick="logout()">Logout</button>
@@ -710,6 +711,114 @@ const $ = id => document.getElementById(id);
 const shuffle = arr => arr.slice().sort(() => Math.random() - .5);
 const norm = s => s.toLowerCase().trim().replace(/\s+/g, ' ');
 
+// ══ Audio system ════════════════════════════════════════════════════════════
+const AUDIO = {
+  enabled: true,
+  ctx: null,
+  files: {},     // streak-3, streak-5, streak-8, streak-10
+};
+
+function initAudio() {
+  // Web Audio context for synthesized beeps. Created lazily on first user
+  // interaction (browsers block audio before that).
+  if (!AUDIO.ctx) {
+    try {
+      AUDIO.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    } catch { return; }
+  }
+  // Preload sound files so they don't lag on first play
+  ['streak-3', 'streak-5', 'streak-8', 'streak-10'].forEach(name => {
+    if (!AUDIO.files[name]) {
+      const a = new Audio(`/sounds/${name}.mp3`);
+      a.preload = 'auto';
+      a.volume = 0.5;
+      AUDIO.files[name] = a;
+    }
+  });
+}
+
+// Initialise on first interaction (required by browser autoplay policy)
+document.addEventListener('click', () => {
+  if (AUDIO.ctx && AUDIO.ctx.state === 'suspended') AUDIO.ctx.resume();
+  initAudio();
+}, { once: false });
+
+function loadSoundPref() {
+  const stored = localStorage.getItem('svenska-sound');
+  AUDIO.enabled = stored !== 'off';
+  const btn = $('sound-toggle');
+  if (btn) btn.textContent = AUDIO.enabled ? '🔊' : '🔇';
+}
+
+function toggleSound() {
+  AUDIO.enabled = !AUDIO.enabled;
+  localStorage.setItem('svenska-sound', AUDIO.enabled ? 'on' : 'off');
+  $('sound-toggle').textContent = AUDIO.enabled ? '🔊' : '🔇';
+  if (AUDIO.enabled) playDing(0);   // confirmation beep
+}
+
+// Synth: short pleasant tone. `pitch` is a semitone offset from base.
+function playDing(pitchSteps = 0) {
+  if (!AUDIO.enabled || !AUDIO.ctx) return;
+  const ctx = AUDIO.ctx;
+  const t = ctx.currentTime;
+  const baseFreq = 660; // E5
+  const freq = baseFreq * Math.pow(2, pitchSteps / 12);
+
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.type = 'triangle';
+  osc.frequency.setValueAtTime(freq, t);
+  osc.frequency.exponentialRampToValueAtTime(freq * 1.5, t + 0.05);
+  gain.gain.setValueAtTime(0.0001, t);
+  gain.gain.exponentialRampToValueAtTime(0.25, t + 0.01);
+  gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.18);
+
+  osc.connect(gain).connect(ctx.destination);
+  osc.start(t);
+  osc.stop(t + 0.2);
+}
+
+// Synth: low thud for wrong answer
+function playThud() {
+  if (!AUDIO.enabled || !AUDIO.ctx) return;
+  const ctx = AUDIO.ctx;
+  const t = ctx.currentTime;
+
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(220, t);
+  osc.frequency.exponentialRampToValueAtTime(80, t + 0.18);
+  gain.gain.setValueAtTime(0.0001, t);
+  gain.gain.exponentialRampToValueAtTime(0.25, t + 0.01);
+  gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.22);
+
+  osc.connect(gain).connect(ctx.destination);
+  osc.start(t);
+  osc.stop(t + 0.25);
+}
+
+// Short ascending arpeggio for end-of-chapter
+function playFanfare() {
+  if (!AUDIO.enabled || !AUDIO.ctx) return;
+  [0, 4, 7, 12].forEach((step, i) => {
+    setTimeout(() => playDing(step), i * 90);
+  });
+}
+
+// File-based sound for streak milestones
+function playStreakSound(tier) {
+  if (!AUDIO.enabled) return;
+  const name = `streak-${tier}`;
+  const a = AUDIO.files[name];
+  if (!a) return;
+  // Clone so overlapping plays work
+  const clone = a.cloneNode();
+  clone.volume = 0.5;
+  clone.play().catch(() => {});
+}
+
 const MODE_LABELS = {
   mcq: 'Multiple choice',
   type: 'Typing',
@@ -756,6 +865,8 @@ async function login() {
     state.username = username;
     $('avatar-initial').textContent = username[0].toUpperCase();
     $('topbar-username').textContent = username;
+    loadSoundPref();
+    initAudio();
     await showDashboard();
   } catch (e) {
     alert('Error: ' + e.message);
@@ -1126,19 +1237,23 @@ function recordAnswer(isCorrect, answer) {
     fb.textContent = '✓ Correct!';
     fb.className = 'feedback-bar correct';
 
-    // Streak only matters for MCQ mode (Survival/Speed have their own dynamics)
+    // Streak only matters for MCQ mode
     if (state.gameMode === 'mcq') {
       state.streak++;
       if (state.streak > state.bestStreak) state.bestStreak = state.streak;
       onStreakChange(state.streak);
+      // Pitch climbs with streak so it sounds like a scale
+      playDing(Math.min(state.streak - 1, 12));
+    } else {
+      playDing(0);
     }
   } else {
     state.wrong++;
     fb.textContent = `✗ Answer: ${answer}`;
     fb.className = 'feedback-bar wrong';
+    playThud();
 
     if (state.gameMode === 'mcq' && state.streak > 0) {
-      // Streak broken — quick visual reset
       const pill = $('streak-pill');
       if (pill) pill.classList.remove('bump');
       state.streak = 0;
@@ -1209,6 +1324,11 @@ function onStreakChange(streak) {
   if (streak === 3 || streak === 5 || streak === 8 || streak === 10 ||
       (streak > 10 && streak % 5 === 0)) {
     showCombo(streak);
+    // Play file sound for the matching tier
+    if (streak >= 10)     playStreakSound(10);
+    else if (streak >= 8) playStreakSound(8);
+    else if (streak >= 5) playStreakSound(5);
+    else                  playStreakSound(3);
   }
 
   // Particles per tier
@@ -1440,6 +1560,8 @@ async function finishQuiz() {
   $('results-breakdown').innerHTML = breakdown;
   $('lb-chapter').textContent = state.chapter;
   $('lb-mode').textContent = MODE_LABELS[m];
+
+  playFanfare();
 
   renderMistakes();
   loadLeaderboard();
