@@ -1,0 +1,1073 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Word Tetris — Svenska</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg-deep:    #050816;
+    --bg-mid:     #0c1230;
+    --bg-card:    #131a3d;
+    --border:     #2a3470;
+    --neon-cyan:  #00f0ff;
+    --neon-pink:  #ff2bd6;
+    --neon-yellow:#ffd23f;
+    --neon-green: #00ff88;
+    --neon-red:   #ff3366;
+    --neon-purple:#b026ff;
+    --text:       #e8ecff;
+    --muted:      #6677aa;
+    --shadow:     0 0 20px;
+  }
+
+  html, body {
+    background: var(--bg-deep);
+    color: var(--text);
+    font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  /* Scanline + grid backdrop */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background:
+      linear-gradient(transparent 50%, rgba(0,240,255,0.02) 50%),
+      linear-gradient(90deg, transparent 50%, rgba(255,43,214,0.015) 50%);
+    background-size: 4px 4px, 4px 4px;
+    pointer-events: none;
+    z-index: 1;
+  }
+  body::after {
+    content: '';
+    position: fixed; inset: 0;
+    background: radial-gradient(ellipse at 30% 20%, rgba(176,38,255,0.15), transparent 60%),
+                radial-gradient(ellipse at 70% 80%, rgba(0,240,255,0.12), transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .screen { display: none; min-height: 100vh; position: relative; z-index: 2; }
+  .screen.active { display: flex; flex-direction: column; }
+
+  /* ═══ TITLE ═══ */
+  #title-screen {
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 24px;
+  }
+
+  .neon-logo {
+    font-size: clamp(2.5rem, 8vw, 5rem);
+    font-weight: 900;
+    letter-spacing: -2px;
+    background: linear-gradient(180deg, var(--neon-cyan), var(--neon-pink));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-shadow:
+      0 0 30px rgba(0,240,255,.5),
+      0 0 60px rgba(255,43,214,.3);
+    margin-bottom: 4px;
+    line-height: 0.95;
+    filter: drop-shadow(0 0 20px var(--neon-cyan));
+  }
+  .neon-tag {
+    font-size: .7rem;
+    color: var(--neon-cyan);
+    letter-spacing: 6px;
+    margin-bottom: 40px;
+    text-transform: uppercase;
+    text-shadow: 0 0 10px var(--neon-cyan);
+  }
+
+  .neon-card {
+    background: rgba(19, 26, 61, .6);
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 28px;
+    max-width: 380px;
+    width: 100%;
+    box-shadow:
+      0 0 40px rgba(0,240,255,.15),
+      inset 0 1px 0 rgba(255,255,255,.05);
+  }
+  .neon-card h2 {
+    font-size: .8rem;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    margin-bottom: 18px;
+    color: var(--neon-cyan);
+  }
+
+  .neon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 14px 22px;
+    border-radius: 10px;
+    border: 1px solid var(--neon-cyan);
+    background: rgba(0,240,255,.08);
+    color: var(--text);
+    font-size: .85rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all .15s;
+    text-shadow: 0 0 8px var(--neon-cyan);
+    box-shadow: 0 0 20px rgba(0,240,255,.2), inset 0 0 20px rgba(0,240,255,.05);
+    width: 100%;
+  }
+  .neon-btn:hover {
+    background: rgba(0,240,255,.18);
+    box-shadow: 0 0 30px rgba(0,240,255,.5), inset 0 0 30px rgba(0,240,255,.1);
+    transform: translateY(-2px);
+  }
+  .neon-btn:active { transform: translateY(0); }
+  .neon-btn.pink { border-color: var(--neon-pink); background: rgba(255,43,214,.08); text-shadow: 0 0 8px var(--neon-pink); box-shadow: 0 0 20px rgba(255,43,214,.2), inset 0 0 20px rgba(255,43,214,.05); }
+  .neon-btn.pink:hover { background: rgba(255,43,214,.18); box-shadow: 0 0 30px rgba(255,43,214,.5), inset 0 0 30px rgba(255,43,214,.1); }
+  .neon-btn.green { border-color: var(--neon-green); background: rgba(0,255,136,.08); text-shadow: 0 0 8px var(--neon-green); box-shadow: 0 0 20px rgba(0,255,136,.2); color: var(--neon-green); }
+  .neon-btn.ghost { border-color: var(--muted); background: transparent; color: var(--muted); text-shadow: none; box-shadow: none; }
+  .neon-btn.ghost:hover { color: var(--text); border-color: var(--text); box-shadow: 0 0 20px rgba(232,236,255,.1); }
+
+  .high-score {
+    margin-top: 20px;
+    text-align: center;
+    color: var(--neon-yellow);
+    font-size: .85rem;
+    text-shadow: 0 0 10px var(--neon-yellow);
+  }
+  .high-score-label { font-size: .65rem; color: var(--muted); letter-spacing: 2px; }
+
+  /* ═══ GAME ═══ */
+  #game-screen { padding: 12px; max-width: 720px; margin: 0 auto; width: 100%; }
+
+  .game-topbar {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  .game-stat {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 10px;
+    text-align: center;
+  }
+  .game-stat-label {
+    font-size: .55rem;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--muted);
+    margin-bottom: 2px;
+  }
+  .game-stat-value {
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: var(--neon-cyan);
+    text-shadow: 0 0 8px var(--neon-cyan);
+  }
+  .game-stat.score .game-stat-value { color: var(--neon-yellow); text-shadow: 0 0 8px var(--neon-yellow); }
+  .game-stat.level .game-stat-value { color: var(--neon-pink); text-shadow: 0 0 8px var(--neon-pink); }
+
+  /* Playfield */
+  .playfield-wrap {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 12px;
+  }
+  .playfield {
+    position: relative;
+    width: 100%;
+    max-width: 380px;
+    aspect-ratio: 5 / 7;       /* 5 columns, 7 rows roughly */
+    background:
+      linear-gradient(180deg, rgba(0,240,255,.04) 0%, rgba(255,43,214,.04) 100%),
+      var(--bg-mid);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow:
+      0 0 30px rgba(0,240,255,.15),
+      inset 0 0 60px rgba(0,0,0,.5);
+  }
+  /* Grid lines */
+  .playfield::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      repeating-linear-gradient(0deg, transparent 0, transparent calc(100%/7 - 1px), rgba(42,52,112,.4) calc(100%/7 - 1px), rgba(42,52,112,.4) calc(100%/7));
+    pointer-events: none;
+  }
+
+  /* Falling block */
+  .falling-block {
+    position: absolute;
+    width: calc(100% - 20px);
+    left: 10px;
+    height: calc(100% / 7);
+    background: linear-gradient(135deg, var(--neon-cyan), var(--neon-purple));
+    border: 2px solid var(--neon-cyan);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    font-weight: 800;
+    color: #fff;
+    text-shadow: 0 1px 4px rgba(0,0,0,.6);
+    box-shadow:
+      0 0 20px var(--neon-cyan),
+      inset 0 0 20px rgba(255,255,255,.15);
+    transition: top linear;
+    z-index: 2;
+    padding: 0 10px;
+    text-align: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .falling-block.warn {
+    background: linear-gradient(135deg, var(--neon-yellow), var(--neon-pink));
+    border-color: var(--neon-yellow);
+    box-shadow: 0 0 20px var(--neon-yellow), inset 0 0 20px rgba(255,255,255,.15);
+  }
+  .falling-block.danger {
+    background: linear-gradient(135deg, var(--neon-red), var(--neon-purple));
+    border-color: var(--neon-red);
+    box-shadow: 0 0 25px var(--neon-red), inset 0 0 20px rgba(255,255,255,.15);
+    animation: danger-pulse .4s infinite;
+  }
+  @keyframes danger-pulse {
+    50% { box-shadow: 0 0 40px var(--neon-red), inset 0 0 30px rgba(255,255,255,.2); }
+  }
+
+  /* Stacked block (locked at bottom) */
+  .stacked-block {
+    position: absolute;
+    width: calc(100% - 20px);
+    left: 10px;
+    height: calc(100% / 7);
+    background: linear-gradient(135deg, rgba(255,51,102,.3), rgba(176,38,255,.3));
+    border: 1px solid var(--neon-red);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: .9rem;
+    color: var(--text);
+    box-shadow: 0 0 12px rgba(255,51,102,.4);
+    padding: 0 8px;
+    text-align: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    z-index: 1;
+    animation: stack-land .3s ease;
+  }
+  @keyframes stack-land {
+    0%   { transform: scale(1.1); opacity: .5; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  /* Floor warning lines */
+  .floor-line {
+    position: absolute;
+    left: 0; right: 0;
+    height: 1px;
+    background: var(--neon-red);
+    opacity: .3;
+    box-shadow: 0 0 8px var(--neon-red);
+    pointer-events: none;
+  }
+
+  /* Choices */
+  .choices-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .choice {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 10px;
+    color: var(--text);
+    font-size: .85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all .12s;
+    text-align: center;
+    line-height: 1.3;
+    position: relative;
+    overflow: hidden;
+  }
+  .choice::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, transparent, rgba(0,240,255,.1));
+    opacity: 0;
+    transition: opacity .15s;
+  }
+  .choice:hover:not(:disabled) {
+    border-color: var(--neon-cyan);
+    box-shadow: 0 0 16px rgba(0,240,255,.25);
+    transform: translateY(-1px);
+  }
+  .choice:hover:not(:disabled)::before { opacity: 1; }
+  .choice.correct {
+    border-color: var(--neon-green);
+    background: rgba(0,255,136,.15);
+    color: var(--neon-green);
+    box-shadow: 0 0 25px var(--neon-green);
+  }
+  .choice.wrong {
+    border-color: var(--neon-red);
+    background: rgba(255,51,102,.15);
+    color: var(--neon-red);
+    box-shadow: 0 0 25px var(--neon-red);
+    animation: shake .35s;
+  }
+  .choice:disabled { cursor: default; }
+  @keyframes shake {
+    0%,100% { transform: translateX(0); }
+    25% { transform: translateX(-4px); }
+    75% { transform: translateX(4px); }
+  }
+
+  /* Bottom controls hint */
+  .hint-bar {
+    text-align: center;
+    font-size: .65rem;
+    color: var(--muted);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-top: 4px;
+  }
+  .hint-bar .key {
+    display: inline-block;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1px 6px;
+    color: var(--neon-cyan);
+    margin: 0 2px;
+  }
+
+  /* Quit button */
+  .quit-btn {
+    background: transparent;
+    border: 1px solid var(--muted);
+    color: var(--muted);
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: .65rem;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .quit-btn:hover { color: var(--neon-red); border-color: var(--neon-red); }
+
+  .top-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+  }
+
+  /* Combo display */
+  .combo-display {
+    position: fixed;
+    top: 30%;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 3rem;
+    font-weight: 900;
+    pointer-events: none;
+    opacity: 0;
+    z-index: 100;
+    text-shadow: 0 0 30px currentColor;
+    letter-spacing: -2px;
+  }
+  .combo-display.show { animation: combo-fly 1s ease-out; }
+  @keyframes combo-fly {
+    0%   { opacity: 0; transform: translate(-50%, 30px) scale(.5); }
+    25%  { opacity: 1; transform: translate(-50%, 0) scale(1.2); }
+    75%  { opacity: 1; transform: translate(-50%, -20px) scale(1); }
+    100% { opacity: 0; transform: translate(-50%, -60px) scale(.9); }
+  }
+
+  /* Particle layer */
+  .fx-layer {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 50;
+    overflow: hidden;
+  }
+  .particle {
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    border-radius: 1px;
+    pointer-events: none;
+  }
+
+  /* Game over screen */
+  .game-over-banner {
+    font-size: 3rem;
+    font-weight: 900;
+    background: linear-gradient(180deg, var(--neon-red), var(--neon-pink));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: 0 0 40px var(--neon-red);
+    letter-spacing: -2px;
+    margin-bottom: 8px;
+  }
+  .game-over-banner.win {
+    background: linear-gradient(180deg, var(--neon-green), var(--neon-cyan));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: 0 0 40px var(--neon-green);
+  }
+
+  .stats-block {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px;
+    margin: 18px 0;
+    width: 100%;
+    max-width: 380px;
+  }
+  .stats-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    font-size: .85rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .stats-row:last-child { border-bottom: none; }
+  .stats-row .lbl { color: var(--muted); text-transform: uppercase; letter-spacing: 1px; font-size: .7rem; }
+  .stats-row .val { font-weight: 800; }
+  .stats-row .val.gold { color: var(--neon-yellow); text-shadow: 0 0 6px var(--neon-yellow); }
+  .stats-row .val.cyan { color: var(--neon-cyan); text-shadow: 0 0 6px var(--neon-cyan); }
+  .stats-row .val.pink { color: var(--neon-pink); text-shadow: 0 0 6px var(--neon-pink); }
+
+  .new-record {
+    color: var(--neon-yellow);
+    text-shadow: 0 0 10px var(--neon-yellow);
+    font-size: .85rem;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    animation: pulse-yellow 1s infinite;
+    margin-top: 8px;
+  }
+  @keyframes pulse-yellow {
+    50% { opacity: .5; }
+  }
+
+  /* Mobile */
+  @media (max-width: 480px) {
+    .neon-logo { font-size: 2.5rem; }
+    .game-stat-value { font-size: .95rem; }
+    .falling-block { font-size: 1.05rem; }
+    .stacked-block { font-size: .75rem; }
+    .choice { font-size: .75rem; padding: 12px 8px; }
+    .game-over-banner { font-size: 2.2rem; }
+  }
+
+  /* Floating "+points" indicator */
+  .points-pop {
+    position: absolute;
+    font-weight: 900;
+    color: var(--neon-yellow);
+    text-shadow: 0 0 10px var(--neon-yellow);
+    pointer-events: none;
+    z-index: 60;
+    font-size: 1.3rem;
+    animation: points-fly .9s ease-out forwards;
+  }
+  @keyframes points-fly {
+    0%   { transform: translateY(0) scale(.5); opacity: 0; }
+    20%  { transform: translateY(-10px) scale(1.3); opacity: 1; }
+    100% { transform: translateY(-50px) scale(1); opacity: 0; }
+  }
+
+  /* Spinner */
+  .spinner {
+    width: 36px;
+    height: 36px;
+    border: 3px solid var(--border);
+    border-top-color: var(--neon-cyan);
+    border-radius: 50%;
+    animation: spin .7s linear infinite;
+    margin: 40px auto;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<div class="fx-layer" id="fx-layer"></div>
+<div class="combo-display" id="combo-display"></div>
+
+<!-- ═══ TITLE ═══ -->
+<div class="screen active" id="title-screen">
+  <div class="neon-logo">WORD<br>TETRIS</div>
+  <div class="neon-tag">★ SVENSKA NEON EDITION ★</div>
+  <div class="neon-card">
+    <h2>How to play</h2>
+    <p style="font-size:.8rem;color:var(--text);line-height:1.6;margin-bottom:18px">
+      Swedish words fall from the top.<br>
+      Pick the right English translation<br>
+      <strong style="color:var(--neon-cyan)">before they hit the stack.</strong><br><br>
+      <span style="color:var(--muted);font-size:.7rem">5 stacked blocks = game over</span>
+    </p>
+    <button class="neon-btn pink" onclick="startGame()">▶ START GAME</button>
+    <div class="high-score" id="high-score-display"></div>
+  </div>
+  <p style="margin-top:20px;font-size:.65rem;color:var(--muted)">
+    <a href="/" style="color:var(--neon-cyan);text-decoration:none">← back to main app</a>
+  </p>
+</div>
+
+<!-- ═══ LOADING ═══ -->
+<div class="screen" id="loading-screen" style="align-items:center;justify-content:center">
+  <div class="spinner"></div>
+  <p style="font-size:.7rem;color:var(--muted);letter-spacing:2px">LOADING WORDS...</p>
+</div>
+
+<!-- ═══ GAME ═══ -->
+<div class="screen" id="game-screen">
+  <div class="top-row">
+    <div style="font-size:.75rem;color:var(--neon-cyan);letter-spacing:2px;text-shadow:0 0 8px var(--neon-cyan)">▶ PLAYING</div>
+    <button class="quit-btn" onclick="quitGame()">⏎ QUIT</button>
+  </div>
+
+  <div class="game-topbar">
+    <div class="game-stat score">
+      <div class="game-stat-label">Score</div>
+      <div class="game-stat-value" id="stat-score">0</div>
+    </div>
+    <div class="game-stat">
+      <div class="game-stat-label">Words</div>
+      <div class="game-stat-value" id="stat-words">0</div>
+    </div>
+    <div class="game-stat level">
+      <div class="game-stat-label">Speed</div>
+      <div class="game-stat-value" id="stat-speed">1.0x</div>
+    </div>
+  </div>
+
+  <div class="playfield-wrap">
+    <div class="playfield" id="playfield">
+      <!-- Stacked blocks + falling block injected here -->
+    </div>
+  </div>
+
+  <div class="choices-row" id="choices-row"></div>
+
+  <div class="hint-bar">
+    Press <span class="key">1</span><span class="key">2</span><span class="key">3</span><span class="key">4</span> on keyboard
+  </div>
+</div>
+
+<!-- ═══ GAME OVER ═══ -->
+<div class="screen" id="end-screen" style="align-items:center;justify-content:center;text-align:center;padding:24px">
+  <div class="game-over-banner" id="end-banner">GAME OVER</div>
+  <div id="new-record-line"></div>
+  <div class="stats-block">
+    <div class="stats-row"><span class="lbl">Final Score</span><span class="val gold" id="end-score">0</span></div>
+    <div class="stats-row"><span class="lbl">Words Translated</span><span class="val cyan" id="end-words">0</span></div>
+    <div class="stats-row"><span class="lbl">Best Streak</span><span class="val pink" id="end-streak">0🔥</span></div>
+    <div class="stats-row"><span class="lbl">Final Speed</span><span class="val" id="end-speed">1.0x</span></div>
+    <div class="stats-row"><span class="lbl">Best Ever</span><span class="val gold" id="end-best">0</span></div>
+  </div>
+  <button class="neon-btn green" onclick="startGame()" style="max-width:380px">▶ PLAY AGAIN</button>
+  <button class="neon-btn ghost" onclick="goToTitle()" style="max-width:380px;margin-top:10px">⏎ MAIN MENU</button>
+</div>
+
+<script>
+// ════════════════════════════════════════════════════════════════════════════
+// CONFIG
+// ════════════════════════════════════════════════════════════════════════════
+const CONFIG = {
+  STACK_LIMIT: 5,         // 5 stacked = game over
+  ROWS: 7,                // visible rows
+  START_FALL_MS: 6000,    // first block falls in 6s
+  MIN_FALL_MS: 800,       // minimum (capped)
+  WORDS_TO_MAX_SPEED: 20, // reach min by word #20
+};
+
+// ════════════════════════════════════════════════════════════════════════════
+// STATE
+// ════════════════════════════════════════════════════════════════════════════
+const SAVE_KEY = 'svenska-tetris-save-v1';
+let highScore = 0;
+
+let WORDS = [];   // all 930 words loaded once
+
+const state = {
+  active: false,
+  score: 0,
+  wordsTranslated: 0,
+  streak: 0,
+  bestStreak: 0,
+  stack: [],           // array of english strings (just for display in stack)
+  currentWord: null,   // {swedish, english}
+  blockEl: null,
+  fallStartTime: 0,
+  fallDuration: 0,
+  rafId: null,
+  answered: false,
+};
+
+// ════════════════════════════════════════════════════════════════════════════
+// HELPERS
+// ════════════════════════════════════════════════════════════════════════════
+const $ = id => document.getElementById(id);
+const shuffle = arr => arr.slice().sort(() => Math.random() - .5);
+const norm = s => s.toLowerCase().trim();
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  $(id).classList.add('active');
+}
+
+function loadHighScore() {
+  try {
+    const stored = localStorage.getItem(SAVE_KEY);
+    highScore = stored ? JSON.parse(stored).highScore || 0 : 0;
+  } catch { highScore = 0; }
+  $('high-score-display').innerHTML = highScore > 0
+    ? `<div class="high-score-label">HIGH SCORE</div>${highScore}`
+    : '';
+}
+loadHighScore();
+
+function saveHighScore(score) {
+  if (score > highScore) {
+    highScore = score;
+    localStorage.setItem(SAVE_KEY, JSON.stringify({ highScore }));
+    return true;
+  }
+  return false;
+}
+
+// Compute fall duration based on words translated
+function computeFallMs(wordsTranslated) {
+  const t = Math.min(wordsTranslated / CONFIG.WORDS_TO_MAX_SPEED, 1);
+  // Eased interpolation between START and MIN
+  const eased = 1 - Math.pow(1 - t, 2);
+  return CONFIG.START_FALL_MS - (CONFIG.START_FALL_MS - CONFIG.MIN_FALL_MS) * eased;
+}
+
+function speedMultiplier() {
+  return (CONFIG.START_FALL_MS / state.fallDuration).toFixed(1);
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// LOAD WORDS FROM API
+// ════════════════════════════════════════════════════════════════════════════
+async function loadAllWords() {
+  showScreen('loading-screen');
+  try {
+    const info = await (await fetch('/api/info')).json();
+    const total = info.total_chapters;
+    const promises = [];
+    for (let i = 1; i <= total; i++) {
+      promises.push(fetch(`/api/words/${i}`).then(r => r.json()));
+    }
+    const results = await Promise.all(promises);
+    WORDS = results.flatMap(r => r.words);
+    return true;
+  } catch (e) {
+    alert('Failed to load words: ' + e.message);
+    showScreen('title-screen');
+    return false;
+  }
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// GAME FLOW
+// ════════════════════════════════════════════════════════════════════════════
+async function startGame() {
+  if (WORDS.length === 0) {
+    const ok = await loadAllWords();
+    if (!ok) return;
+  }
+  resetGame();
+  showScreen('game-screen');
+  state.active = true;
+  spawnBlock();
+}
+
+function resetGame() {
+  state.score = 0;
+  state.wordsTranslated = 0;
+  state.streak = 0;
+  state.bestStreak = 0;
+  state.stack = [];
+  state.currentWord = null;
+  state.answered = false;
+  if (state.blockEl) { state.blockEl.remove(); state.blockEl = null; }
+  if (state.rafId) { cancelAnimationFrame(state.rafId); state.rafId = null; }
+
+  $('playfield').innerHTML = '';
+  updateStats();
+}
+
+function quitGame() {
+  if (!confirm('Quit current game? Score will be lost.')) return;
+  state.active = false;
+  if (state.rafId) cancelAnimationFrame(state.rafId);
+  resetGame();
+  showScreen('title-screen');
+  loadHighScore();
+}
+
+function goToTitle() {
+  showScreen('title-screen');
+  loadHighScore();
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// BLOCK SPAWN & FALL
+// ════════════════════════════════════════════════════════════════════════════
+function spawnBlock() {
+  if (!state.active) return;
+
+  // Pick a random word the player isn't currently being asked
+  const word = WORDS[Math.floor(Math.random() * WORDS.length)];
+  state.currentWord = word;
+  state.answered = false;
+
+  // Compute fall duration based on progress
+  state.fallDuration = computeFallMs(state.wordsTranslated);
+
+  // Create block element
+  const block = document.createElement('div');
+  block.className = 'falling-block';
+  block.textContent = word.swedish;
+  block.style.top = '0%';
+
+  // The block needs to fall just above the stack (or to bottom of playfield)
+  const stackedRows = state.stack.length;
+  const totalRows = CONFIG.ROWS;
+  const targetRow = totalRows - stackedRows - 1;  // 0-indexed from top
+  const targetTopPct = (targetRow / totalRows) * 100;
+
+  state.blockEl = block;
+  $('playfield').appendChild(block);
+
+  // Render choices
+  renderChoices(word);
+
+  state.fallStartTime = performance.now();
+  state.targetTopPct = targetTopPct;
+
+  // Animate
+  animateFall();
+
+  updateStats();
+}
+
+function animateFall() {
+  if (!state.active || !state.blockEl) return;
+
+  const elapsed = performance.now() - state.fallStartTime;
+  const progress = Math.min(elapsed / state.fallDuration, 1);
+  const top = progress * state.targetTopPct;
+  state.blockEl.style.top = top + '%';
+
+  // Visual urgency
+  if (progress > 0.85) state.blockEl.classList.add('danger');
+  else if (progress > 0.6) state.blockEl.classList.add('warn');
+
+  if (progress >= 1) {
+    if (!state.answered) {
+      // Time's up — count as wrong
+      onTimeOut();
+    }
+    return;
+  }
+
+  state.rafId = requestAnimationFrame(animateFall);
+}
+
+function onTimeOut() {
+  if (state.answered) return;
+  state.answered = true;
+
+  // Highlight the correct one
+  const correct = state.currentWord.english;
+  document.querySelectorAll('.choice').forEach(b => {
+    b.disabled = true;
+    if (norm(b.textContent) === norm(correct)) b.classList.add('correct');
+  });
+
+  registerWrong();
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// CHOICES
+// ════════════════════════════════════════════════════════════════════════════
+function renderChoices(word) {
+  const others = shuffle(WORDS.filter(w => w !== word)).slice(0, 3).map(w => w.english);
+  const choices = shuffle([word.english, ...others]);
+  const row = $('choices-row');
+  row.innerHTML = '';
+  choices.forEach((choice, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'choice';
+    btn.textContent = choice;
+    btn.dataset.idx = i;
+    btn.onclick = () => answerChoice(btn, choice);
+    row.appendChild(btn);
+  });
+}
+
+function answerChoice(btn, choice) {
+  if (state.answered) return;
+  state.answered = true;
+
+  const correct = state.currentWord.english;
+  const isCorrect = norm(choice) === norm(correct);
+
+  document.querySelectorAll('.choice').forEach(b => {
+    b.disabled = true;
+    if (norm(b.textContent) === norm(correct)) b.classList.add('correct');
+  });
+
+  if (!isCorrect) btn.classList.add('wrong');
+
+  if (isCorrect) registerCorrect();
+  else            registerWrong();
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// SCORING + STREAKS
+// ════════════════════════════════════════════════════════════════════════════
+function registerCorrect() {
+  state.streak++;
+  if (state.streak > state.bestStreak) state.bestStreak = state.streak;
+  state.wordsTranslated++;
+
+  // Score: base 100 + speed bonus + streak bonus
+  const base = 100;
+  const speedBonus = Math.round((CONFIG.START_FALL_MS / state.fallDuration) * 25);
+  const streakBonus = state.streak >= 3 ? state.streak * 10 : 0;
+  const total = base + speedBonus + streakBonus;
+  state.score += total;
+
+  // Pop the block
+  popBlock(state.blockEl, '#00ff88');
+  showPointsPop(`+${total}`);
+
+  // Streak milestone effects
+  if (state.streak === 3 || state.streak === 5 || state.streak === 8 ||
+      state.streak === 10 || (state.streak > 10 && state.streak % 5 === 0)) {
+    showCombo(state.streak);
+    confettiBurst(60);
+  }
+
+  // Cancel current animation, spawn next after a tiny delay
+  if (state.rafId) cancelAnimationFrame(state.rafId);
+  state.blockEl = null;
+  setTimeout(() => spawnBlock(), 400);
+
+  updateStats();
+}
+
+function registerWrong() {
+  state.streak = 0;
+
+  // Block lands on stack
+  if (state.blockEl) {
+    landBlockOnStack(state.blockEl, state.currentWord);
+  }
+  state.blockEl = null;
+
+  // Stack overflow check
+  if (state.stack.length >= CONFIG.STACK_LIMIT) {
+    setTimeout(gameOver, 800);
+    return;
+  }
+
+  setTimeout(() => spawnBlock(), 700);
+  updateStats();
+}
+
+function landBlockOnStack(blockEl, word) {
+  // Convert the falling block into a stacked one
+  const totalRows = CONFIG.ROWS;
+  const stackIdx = state.stack.length;     // bottom-up index (0 = bottom)
+  const rowFromTop = totalRows - 1 - stackIdx;
+  const topPct = (rowFromTop / totalRows) * 100;
+
+  blockEl.classList.remove('falling-block', 'warn', 'danger');
+  blockEl.className = 'stacked-block';
+  blockEl.textContent = `${word.swedish} → ${word.english}`;
+  blockEl.style.top = topPct + '%';
+
+  state.stack.push(word.english);
+}
+
+function gameOver() {
+  state.active = false;
+  if (state.rafId) cancelAnimationFrame(state.rafId);
+
+  const isNewRecord = saveHighScore(state.score);
+  const win = state.wordsTranslated >= CONFIG.WORDS_TO_MAX_SPEED * 2; // arbitrary "you crushed it"
+
+  showScreen('end-screen');
+  $('end-banner').textContent = win ? 'AMAZING!' : 'GAME OVER';
+  $('end-banner').classList.toggle('win', win);
+  $('end-score').textContent = state.score;
+  $('end-words').textContent = state.wordsTranslated;
+  $('end-streak').textContent = `${state.bestStreak}🔥`;
+  $('end-speed').textContent = speedMultiplier() + 'x';
+  $('end-best').textContent = highScore;
+  $('new-record-line').innerHTML = isNewRecord ? '<div class="new-record">★ NEW HIGH SCORE ★</div>' : '';
+
+  if (isNewRecord) confettiBurst(120);
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// UI UPDATES
+// ════════════════════════════════════════════════════════════════════════════
+function updateStats() {
+  $('stat-score').textContent = state.score;
+  $('stat-words').textContent = state.wordsTranslated;
+  $('stat-speed').textContent = speedMultiplier() + 'x';
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// EFFECTS
+// ════════════════════════════════════════════════════════════════════════════
+function popBlock(el, color) {
+  if (!el) return;
+  const rect = el.getBoundingClientRect();
+  const cx = rect.left + rect.width / 2;
+  const cy = rect.top + rect.height / 2;
+
+  el.style.transition = 'transform .25s ease, opacity .25s ease';
+  el.style.transform = 'scale(1.2)';
+  el.style.opacity = '0';
+  setTimeout(() => el.remove(), 250);
+
+  burstParticles(cx, cy, color, 20);
+}
+
+function burstParticles(cx, cy, color, count = 16) {
+  const layer = $('fx-layer');
+  for (let i = 0; i < count; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    p.style.background = color;
+    p.style.boxShadow = `0 0 8px ${color}`;
+    p.style.left = cx + 'px';
+    p.style.top = cy + 'px';
+    layer.appendChild(p);
+
+    const angle = Math.random() * Math.PI * 2;
+    const dist = 50 + Math.random() * 100;
+    const dur = 500 + Math.random() * 400;
+
+    p.animate(
+      [
+        { transform: 'translate(-50%,-50%) scale(1)', opacity: 1 },
+        { transform: `translate(${Math.cos(angle)*dist - 4}px, ${Math.sin(angle)*dist - 4}px) scale(0)`, opacity: 0 },
+      ],
+      { duration: dur, easing: 'ease-out', fill: 'forwards' }
+    ).onfinish = () => p.remove();
+  }
+}
+
+const NEON_COLORS = ['#00f0ff','#ff2bd6','#ffd23f','#00ff88','#b026ff'];
+function confettiBurst(count) {
+  const layer = $('fx-layer');
+  const W = window.innerWidth;
+  for (let i = 0; i < count; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    const color = NEON_COLORS[Math.floor(Math.random() * NEON_COLORS.length)];
+    p.style.background = color;
+    p.style.boxShadow = `0 0 8px ${color}`;
+    p.style.width = '10px';
+    p.style.height = '14px';
+    p.style.left = Math.random() * W + 'px';
+    p.style.top = '-20px';
+    layer.appendChild(p);
+
+    const drift = (Math.random() - .5) * 200;
+    const dur = 1500 + Math.random() * 1500;
+    const rot = Math.random() * 720 - 360;
+
+    p.animate(
+      [
+        { transform: 'translate(0,0) rotate(0deg)', opacity: 1 },
+        { transform: `translate(${drift}px, ${window.innerHeight + 40}px) rotate(${rot}deg)`, opacity: .8 },
+      ],
+      { duration: dur, easing: 'cubic-bezier(.2,.6,.4,1)', fill: 'forwards' }
+    ).onfinish = () => p.remove();
+  }
+}
+
+function showCombo(streak) {
+  const el = $('combo-display');
+  let text, color;
+  if (streak >= 10)     { text = `${streak}x COMBO!`; color = '#b026ff'; }
+  else if (streak >= 8) { text = `${streak}x ON FIRE!`; color = '#ff2bd6'; }
+  else if (streak >= 5) { text = `${streak}x STREAK!`; color = '#ffd23f'; }
+  else                  { text = `${streak}x!`; color = '#00ff88'; }
+  el.textContent = text;
+  el.style.color = color;
+  el.classList.remove('show');
+  void el.offsetWidth;
+  el.classList.add('show');
+}
+
+function showPointsPop(text) {
+  if (!state.blockEl) return;
+  const rect = state.blockEl.getBoundingClientRect();
+  const el = document.createElement('div');
+  el.className = 'points-pop';
+  el.textContent = text;
+  el.style.left = (rect.left + rect.width / 2 - 30) + 'px';
+  el.style.top = rect.top + 'px';
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 900);
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// KEYBOARD
+// ════════════════════════════════════════════════════════════════════════════
+document.addEventListener('keydown', e => {
+  if (!state.active || state.answered) return;
+  const idx = ['1','2','3','4'].indexOf(e.key);
+  if (idx >= 0) {
+    const btn = document.querySelector(`.choice[data-idx="${idx}"]`);
+    if (btn) btn.click();
+  }
+});
+</script>
+</body>
+</html>
