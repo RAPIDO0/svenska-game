@@ -488,18 +488,362 @@
       "swedish": "nalka",
       "english": "approach"
     },
-    {
-      "swedish": "Herregud\nfuska\nsjal\nörhäng\nhälsa på\ntristessen\ninte ett dugg\ntröskel                                                                          över huvud taget\"\npåtalar\ngemene man\nKrympa \nkärnfrågan\nsmygande insidious\n\"hugget i sten\"\nlindra\navgörande\nerbarmliga\ndagordning\növerskådlig\nsväröverskådlig\nöSverskuggande\nbehaglig\nbebo\nobehaglig\nvatteninga steam\n\nomständighet = circusustance\n\norimlig inreasonable\n\nFörmätet audacious, arrogant\n\nmängd amount\n\nförbunna preach, dedase",
-      "english": "Oh my God, cheat, shawl, earrings, heal the boredom, not a bit, threshold at all\"\nappeals to the common man, Shrink, the core issue, sneaky, insidious, \"hewn in stone\", alleviate, decisive, pitiful, agenda, clear, very clear, overshadowing, pleasant, inhabit, unpleasant, water, steam, circumstance = circusustance, unreasonable, unreasonable, audacious, arrogant, amount, consecrate, preach, dedase"
-    },
-    {
-      "swedish": "förökar sig\nfrodas\natt bli av med\nutöka\nmatta\nfrön\navgas \nsörjer\ndessvärre\nrår på\nhålla i schack\nödesmättade\nglupsk\nsnål\nställer til\natt ta kål på\nfälla\noförtjänt\nutrota\nsällsynt\ninhemsk\nFjäril\nutrotningshotade\nSköldpadd\nsval\nbesvärlig\nflykting\nvittnar\nuttömd\nutdelning\nnyskick\nsiktet\nnedlagd\nfynd",
-      "english": "multiply\nproliferate\nto get rid of\nexpand\nmattress\nseeds\nexhaust\nsorrow\nunfortunately\nraw\non\nkeep in check\nfatigued\ngluttonous\nstingy\nputs\nto kill\ntrap\nundeservedly\nexterminate\nrare\nnative\nbutterfly\nendangered\nTurtle\ncool\ntroublesome\nrefuge\nwitnesses\nexhausted\ndividend\nnew condition\nsight\ndefunct\nfind"
-    },
-    {
-      "swedish": "efterfrågan \n\nspannmål\n\nbaljväxter\n\npåfrestning\n\nfoder\n\nuppfödning\n\nrapar\n\nSkyndar på = hurry.\n\nKosthållning - dict\n\nhärda claim\n\nföredrat obselete.\n\nutgår assume, base\n\nmåttligt moderately\n\nföga barely, not much\n\nkuslig horrible\n\nbelastar load\n\nbråkdel fraction\n\nFörespråkar advocate\n\nskörden= COTA\n\nråvaran = row material\n\ninslag element\n\ntillsätta\n\nFluga\n\nFångenskap",
-      "english": "demand \n\ngrain\n\nlegumes\n\nstress\n\nfeed\n\nbreeding\n\nburp\n\nHurry = hurry.\n\nDiet - dict\n\nharden claim\n\npreferred obselete.\n\nexpunged assume, base\n\nmoderately moderately\n\nbarely, not much\n\ncreepy horrible\n\nload\n\nfraction\n\nAdvocate advocate\n\nharvest = COTA\n\nraw material = row material\n\nelement\n\nadd\n\nFly\n\nCaptivity"
-    },
+  {
+    "swedish": "Herregud",
+    "english": "Oh my God"
+  },
+  {
+    "swedish": "fuska",
+    "english": "to cheat"
+  },
+  {
+    "swedish": "sjal",
+    "english": "shawl"
+  },
+  {
+    "swedish": "örhänge",
+    "english": "earring"
+  },
+  {
+    "swedish": "hälsa på",
+    "english": "to visit"
+  },
+  {
+    "swedish": "tristessen",
+    "english": "the boredom"
+  },
+  {
+    "swedish": "inte ett dugg",
+    "english": "not a bit"
+  },
+  {
+    "swedish": "tröskel",
+    "english": "threshold"
+  },
+  {
+    "swedish": "över huvud taget",
+    "english": "at all"
+  },
+  {
+    "swedish": "påtalar",
+    "english": "points out"
+  },
+  {
+    "swedish": "gemene man",
+    "english": "the common man"
+  },
+  {
+    "swedish": "krympa",
+    "english": "to shrink"
+  },
+  {
+    "swedish": "kärnfrågan",
+    "english": "the core issue"
+  },
+  {
+    "swedish": "smygande",
+    "english": "insidious"
+  },
+  {
+    "swedish": "hugget i sten",
+    "english": "set in stone"
+  },
+  {
+    "swedish": "lindra",
+    "english": "to alleviate"
+  },
+  {
+    "swedish": "avgörande",
+    "english": "decisive"
+  },
+  {
+    "swedish": "erbarmlig",
+    "english": "pitiful"
+  },
+  {
+    "swedish": "dagordning",
+    "english": "agenda"
+  },
+  {
+    "swedish": "överskådlig",
+    "english": "clear, easy to grasp"
+  },
+  {
+    "swedish": "svåröverskådlig",
+    "english": "hard to grasp"
+  },
+  {
+    "swedish": "överskuggande",
+    "english": "overshadowing"
+  },
+  {
+    "swedish": "behaglig",
+    "english": "pleasant"
+  },
+  {
+    "swedish": "bebo",
+    "english": "to inhabit"
+  },
+  {
+    "swedish": "obehaglig",
+    "english": "unpleasant"
+  },
+  {
+    "swedish": "vattenånga",
+    "english": "steam"
+  },
+  {
+    "swedish": "omständighet",
+    "english": "circumstance"
+  },
+  {
+    "swedish": "orimlig",
+    "english": "unreasonable"
+  },
+  {
+    "swedish": "förmätet",
+    "english": "audacious, arrogant"
+  },
+  {
+    "swedish": "mängd",
+    "english": "amount"
+  },
+  {
+    "swedish": "förkunna",
+    "english": "to preach, to declare"
+  },
+  {
+    "swedish": "förökar sig",
+    "english": "to multiply, to reproduce"
+  },
+  {
+    "swedish": "frodas",
+    "english": "to thrive, to flourish"
+  },
+  {
+    "swedish": "att bli av med",
+    "english": "to get rid of"
+  },
+  {
+    "swedish": "utöka",
+    "english": "to expand"
+  },
+  {
+    "swedish": "matta",
+    "english": "rug, carpet"
+  },
+  {
+    "swedish": "frön",
+    "english": "seeds"
+  },
+  {
+    "swedish": "avgas",
+    "english": "exhaust"
+  },
+  {
+    "swedish": "sörjer",
+    "english": "mourns"
+  },
+  {
+    "swedish": "dessvärre",
+    "english": "unfortunately"
+  },
+  {
+    "swedish": "rår på",
+    "english": "can handle, can cope with"
+  },
+  {
+    "swedish": "hålla i schack",
+    "english": "to keep in check"
+  },
+  {
+    "swedish": "ödesmättad",
+    "english": "fateful"
+  },
+  {
+    "swedish": "glupsk",
+    "english": "voracious, gluttonous"
+  },
+  {
+    "swedish": "snål",
+    "english": "stingy"
+  },
+  {
+    "swedish": "ställer till",
+    "english": "causes (trouble)"
+  },
+  {
+    "swedish": "att ta kål på",
+    "english": "to kill off"
+  },
+  {
+    "swedish": "fälla",
+    "english": "trap"
+  },
+  {
+    "swedish": "oförtjänt",
+    "english": "undeservedly"
+  },
+  {
+    "swedish": "utrota",
+    "english": "to exterminate"
+  },
+  {
+    "swedish": "sällsynt",
+    "english": "rare"
+  },
+  {
+    "swedish": "inhemsk",
+    "english": "native, domestic"
+  },
+  {
+    "swedish": "fjäril",
+    "english": "butterfly"
+  },
+  {
+    "swedish": "utrotningshotad",
+    "english": "endangered"
+  },
+  {
+    "swedish": "sköldpadda",
+    "english": "turtle"
+  },
+  {
+    "swedish": "sval",
+    "english": "cool"
+  },
+  {
+    "swedish": "besvärlig",
+    "english": "troublesome, difficult"
+  },
+  {
+    "swedish": "flykting",
+    "english": "refugee"
+  },
+  {
+    "swedish": "vittnar",
+    "english": "witnesses, testifies"
+  },
+  {
+    "swedish": "uttömd",
+    "english": "exhausted, depleted"
+  },
+  {
+    "swedish": "utdelning",
+    "english": "dividend, distribution"
+  },
+  {
+    "swedish": "nyskick",
+    "english": "new condition"
+  },
+  {
+    "swedish": "siktet",
+    "english": "the sight, the aim"
+  },
+  {
+    "swedish": "nedlagd",
+    "english": "shut down, defunct"
+  },
+  {
+    "swedish": "fynd",
+    "english": "find, bargain"
+  },
+  {
+    "swedish": "efterfrågan",
+    "english": "demand"
+  },
+  {
+    "swedish": "spannmål",
+    "english": "grain"
+  },
+  {
+    "swedish": "baljväxter",
+    "english": "legumes"
+  },
+  {
+    "swedish": "påfrestning",
+    "english": "stress, strain"
+  },
+  {
+    "swedish": "foder",
+    "english": "feed (animal)"
+  },
+  {
+    "swedish": "uppfödning",
+    "english": "breeding"
+  },
+  {
+    "swedish": "rapar",
+    "english": "burps"
+  },
+  {
+    "swedish": "skyndar på",
+    "english": "to hurry"
+  },
+  {
+    "swedish": "kosthållning",
+    "english": "diet"
+  },
+  {
+    "swedish": "härda",
+    "english": "to harden, to claim"
+  },
+  {
+    "swedish": "föredrar",
+    "english": "to prefer"
+  },
+  {
+    "swedish": "utgår",
+    "english": "to assume, to be based on"
+  },
+  {
+    "swedish": "måttligt",
+    "english": "moderately"
+  },
+  {
+    "swedish": "föga",
+    "english": "barely, not much"
+  },
+  {
+    "swedish": "kuslig",
+    "english": "creepy, eerie"
+  },
+  {
+    "swedish": "belastar",
+    "english": "loads, burdens"
+  },
+  {
+    "swedish": "bråkdel",
+    "english": "fraction"
+  },
+  {
+    "swedish": "förespråkar",
+    "english": "advocates"
+  },
+  {
+    "swedish": "skörden",
+    "english": "the harvest"
+  },
+  {
+    "swedish": "råvaran",
+    "english": "the raw material"
+  },
+  {
+    "swedish": "inslag",
+    "english": "element, feature"
+  },
+  {
+    "swedish": "tillsätta",
+    "english": "to add, to appoint"
+  },
+  {
+    "swedish": "fluga",
+    "english": "fly"
+  },
+  {
+    "swedish": "fångenskap",
+    "english": "captivity"
+  },
     {
       "swedish": "besvärlig",
       "english": "difficult"

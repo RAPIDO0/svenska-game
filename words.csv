@@ -4,7 +4,6 @@ Swedish,English,utebli,to fail to appear
 Swedish,English,usel,wretched
 Swedish,English,ana,guess
 Swedish,English,flertydighet,ambiguity
-English,Swedish,flertydighet,flertydighet
 Swedish,English,förbryllande,puzzling
 Swedish,English,ur,from
 Swedish,English,krets,circuit
@@ -118,205 +117,96 @@ Swedish,English,strosa,stroll
 Swedish,English,utsträckning,extent
 Swedish,English,jordbruk,Agriculture
 Swedish,English,genväg,shortcut
-English,Swedish,superstition,vidskepelse
 Swedish,English,nalka,approach
-Swedish,English,"Herregud
-fuska
-sjal
-örhäng
-hälsa på
-tristessen
-inte ett dugg
-tröskel                                                                          över huvud taget""
-påtalar
-gemene man
-Krympa 
-kärnfrågan
-smygande insidious
-""hugget i sten""
-lindra
-avgörande
-erbarmliga
-dagordning
-överskådlig
-sväröverskådlig
-öSverskuggande
-behaglig
-bebo
-obehaglig
-vatteninga steam
-
-omständighet = circusustance
-
-orimlig inreasonable
-
-Förmätet audacious, arrogant
-
-mängd amount
-
-förbunna preach, dedase","Oh my God, cheat, shawl, earrings, heal the boredom, not a bit, threshold at all""
-appeals to the common man, Shrink, the core issue, sneaky, insidious, ""hewn in stone"", alleviate, decisive, pitiful, agenda, clear, very clear, overshadowing, pleasant, inhabit, unpleasant, water, steam, circumstance = circusustance, unreasonable, unreasonable, audacious, arrogant, amount, consecrate, preach, dedase"
-Swedish,English,"förökar sig
-frodas
-att bli av med
-utöka
-matta
-frön
-avgas 
-sörjer
-dessvärre
-rår på
-hålla i schack
-ödesmättade
-glupsk
-snål
-ställer til
-att ta kål på
-fälla
-oförtjänt
-utrota
-sällsynt
-inhemsk
-Fjäril
-utrotningshotade
-Sköldpadd
-sval
-besvärlig
-flykting
-vittnar
-uttömd
-utdelning
-nyskick
-siktet
-nedlagd
-fynd","multiply
-proliferate
-to get rid of
-expand
-mattress
-seeds
-exhaust
-sorrow
-unfortunately
-raw
-on
-keep in check
-fatigued
-gluttonous
-stingy
-puts
-to kill
-trap
-undeservedly
-exterminate
-rare
-native
-butterfly
-endangered
-Turtle
-cool
-troublesome
-refuge
-witnesses
-exhausted
-dividend
-new condition
-sight
-defunct
-find"
-Swedish,English,"efterfrågan 
-
-spannmål
-
-baljväxter
-
-påfrestning
-
-foder
-
-uppfödning
-
-rapar
-
-Skyndar på = hurry.
-
-Kosthållning - dict
-
-härda claim
-
-föredrat obselete.
-
-utgår assume, base
-
-måttligt moderately
-
-föga barely, not much
-
-kuslig horrible
-
-belastar load
-
-bråkdel fraction
-
-Förespråkar advocate
-
-skörden= COTA
-
-råvaran = row material
-
-inslag element
-
-tillsätta
-
-Fluga
-
-Fångenskap","demand 
-
-grain
-
-legumes
-
-stress
-
-feed
-
-breeding
-
-burp
-
-Hurry = hurry.
-
-Diet - dict
-
-harden claim
-
-preferred obselete.
-
-expunged assume, base
-
-moderately moderately
-
-barely, not much
-
-creepy horrible
-
-load
-
-fraction
-
-Advocate advocate
-
-harvest = COTA
-
-raw material = row material
-
-element
-
-add
-
-Fly
-
-Captivity"
+Swedish,English,Herregud,Oh my God
+Swedish,English,fuska,to cheat
+Swedish,English,sjal,shawl
+Swedish,English,örhänge,earring
+Swedish,English,hälsa på,to visit
+Swedish,English,tristessen,the boredom
+Swedish,English,inte ett dugg,not a bit
+Swedish,English,tröskel,threshold
+Swedish,English,över huvud taget,at all
+Swedish,English,påtalar,points out
+Swedish,English,gemene man,the common man
+Swedish,English,krympa,to shrink
+Swedish,English,kärnfrågan,the core issue
+Swedish,English,smygande,insidious
+Swedish,English,hugget i sten,set in stone
+Swedish,English,lindra,to alleviate
+Swedish,English,avgörande,decisive
+Swedish,English,erbarmlig,pitiful
+Swedish,English,dagordning,agenda
+Swedish,English,överskådlig,"clear, easy to grasp"
+Swedish,English,svåröverskådlig,hard to grasp
+Swedish,English,överskuggande,overshadowing
+Swedish,English,behaglig,pleasant
+Swedish,English,bebo,to inhabit
+Swedish,English,obehaglig,unpleasant
+Swedish,English,vattenånga,steam
+Swedish,English,omständighet,circumstance
+Swedish,English,orimlig,unreasonable
+Swedish,English,förmätet,"audacious, arrogant"
+Swedish,English,mängd,amount
+Swedish,English,förkunna,"to preach, to declare"
+Swedish,English,förökar sig,"to multiply, to reproduce"
+Swedish,English,frodas,"to thrive, to flourish"
+Swedish,English,att bli av med,to get rid of
+Swedish,English,utöka,to expand
+Swedish,English,matta,"rug, carpet"
+Swedish,English,frön,seeds
+Swedish,English,avgas,exhaust
+Swedish,English,sörjer,mourns
+Swedish,English,dessvärre,unfortunately
+Swedish,English,rår på,"can handle, can cope with"
+Swedish,English,hålla i schack,to keep in check
+Swedish,English,ödesmättad,fateful
+Swedish,English,glupsk,"voracious, gluttonous"
+Swedish,English,snål,stingy
+Swedish,English,ställer till,causes (trouble)
+Swedish,English,att ta kål på,to kill off
+Swedish,English,fälla,trap
+Swedish,English,oförtjänt,undeservedly
+Swedish,English,utrota,to exterminate
+Swedish,English,sällsynt,rare
+Swedish,English,inhemsk,"native, domestic"
+Swedish,English,fjäril,butterfly
+Swedish,English,utrotningshotad,endangered
+Swedish,English,sköldpadda,turtle
+Swedish,English,sval,cool
+Swedish,English,besvärlig,"troublesome, difficult"
+Swedish,English,flykting,refugee
+Swedish,English,vittnar,"witnesses, testifies"
+Swedish,English,uttömd,"exhausted, depleted"
+Swedish,English,utdelning,"dividend, distribution"
+Swedish,English,nyskick,new condition
+Swedish,English,siktet,"the sight, the aim"
+Swedish,English,nedlagd,"shut down, defunct"
+Swedish,English,fynd,"find, bargain"
+Swedish,English,efterfrågan,demand
+Swedish,English,spannmål,grain
+Swedish,English,baljväxter,legumes
+Swedish,English,påfrestning,"stress, strain"
+Swedish,English,foder,feed (animal)
+Swedish,English,uppfödning,breeding
+Swedish,English,rapar,burps
+Swedish,English,skyndar på,to hurry
+Swedish,English,kosthållning,diet
+Swedish,English,härda,"to harden, to claim"
+Swedish,English,föredrar,to prefer
+Swedish,English,utgår,"to assume, to be based on"
+Swedish,English,måttligt,moderately
+Swedish,English,föga,"barely, not much"
+Swedish,English,kuslig,"creepy, eerie"
+Swedish,English,belastar,"loads, burdens"
+Swedish,English,bråkdel,fraction
+Swedish,English,förespråkar,advocates
+Swedish,English,skörden,the harvest
+Swedish,English,råvaran,the raw material
+Swedish,English,inslag,"element, feature"
+Swedish,English,tillsätta,"to add, to appoint"
+Swedish,English,fluga,fly
+Swedish,English,fångenskap,captivity
 Swedish,English,besvärlig,difficult
 Swedish,English,madrass,mattress
 Swedish,English,besparingar,savings
@@ -398,7 +288,6 @@ Swedish,English,mestadels,mostly
 Swedish,English,framhärda,persist
 Swedish,English,att sätta igång,to start
 Swedish,English,framkomma,emerge
-Swedish,English,förnuft,reason
 Swedish,English,strävan,aspiration
 Swedish,English,anteckning,note
 Swedish,English,ohygglig,horrible
@@ -406,9 +295,7 @@ Swedish,English,hygglig,decent
 Swedish,English,dygd,virtue
 Swedish,English,tillfoga,add
 Swedish,English,anade,suspected
-Swedish,English,ana,have a feeling
 Swedish,English,mönster,pattern
-Swedish,Greek,förutsättning,προαπαιτούμενο
 Swedish,English,framsyn,foresight
 Swedish,English,växelverkan,interaction
 Swedish,English,giltig,valid
@@ -416,10 +303,7 @@ Swedish,English,glädja sig åt,to rejoice
 Swedish,English,banbrytande,pioneering
 Swedish,English,envis,stubborn
 Swedish,English,bevisa,evidence
-Swedish,English,bevisa,prove
 Swedish,English,väsen,entity
-Swedish,English,väsen,being
-Swedish,English,väsen,essence
 Swedish,English,innefatta,include
 Swedish,English,slutsats,conclusion
 Swedish,English,försvaga,weaken
@@ -433,13 +317,11 @@ Swedish,English,uppfattning,opinion
 Swedish,English,rådande,current
 Swedish,English,förkasta,reject
 Swedish,English,avhandling,dissertation
-Swedish,English,avhandling,thesis
 Swedish,English,djärv,bold
 Swedish,English,visshet,certainty
 Swedish,English,vistas,staying
 Swedish,English,spänd,tense
 Swedish,English,översvämma,flood
-English,Swedish,confirm,bekräfta
 Swedish,English,muta,bribe
 Swedish,English,bevis,evidence
 Swedish,English,hjälte,hero
@@ -463,7 +345,6 @@ Swedish,English,begära,ask for
 Swedish,English,dimma,fog
 Swedish,English,sval,cool
 Swedish,English,betvivla,doubt
-Swedish,English,betvivla,disbelieve
 Swedish,English,tillfreds,satisfied
 Swedish,English,avundas,envy
 Swedish,English,otur,bad luck
@@ -479,21 +360,16 @@ Swedish,English,snut,cop
 Swedish,English,ligist,hooligan
 Swedish,English,förlamad,paralyzed
 Swedish,English,torka,wipe
-Swedish,English,torka,dry
 Swedish,English,spräcka,crack
 Swedish,English,förtvivla,despair
 Swedish,English,fiffig,clever
 Swedish,English,frist,deadline
 Swedish,English,vi ska dra nu,we are leaving now
-English,Swedish,competitive,konkurrenskraftig
 Swedish,English,vi får se,we'll see
 Swedish,English,nyttig,useful
-English,Swedish,useful,användbar
-English,Swedish,teenager,tonåring
 Swedish,English,På avstånd,At a distance
 Swedish,English,vårdslösa,careless
 Swedish,English,slösa bort,waste
-English,Swedish,common sense,sunt förnuft
 Swedish,English,i ett svep,in one go
 Swedish,English,skämta,joke
 Swedish,English,överrumplad,taken by surprise
@@ -505,7 +381,6 @@ Swedish,English,emellanåt,occasionally
 Swedish,English,tvivla på,doubt
 Swedish,English,vidarebefordra,forward
 Swedish,English,ha att göra med,be involved with
-Swedish,English,ha att göra med,deal with
 Swedish,English,ta reda på,find out
 Swedish,English,tillfredsställa,satisfy
 Swedish,English,frestad,tempted
@@ -526,7 +401,6 @@ Swedish,English,liktydig,synonymous
 Swedish,English,klyfta,gap
 Swedish,English,ohyggliga,horrible
 Swedish,English,i den utsträckning,to the extent that
-English,Swedish,hesitate,tveka
 Swedish,English,spöa upp,to whip up
 Swedish,English,utpressa,blackmail
 Swedish,English,förpliktelse,obligation
@@ -536,7 +410,6 @@ Swedish,English,svika dig,let you down
 Swedish,English,omständigheter,circumstances
 Swedish,English,urskulda sig,to excuse oneself
 Swedish,English,vålla,inflict
-Swedish,English,vålla,cause
 Swedish,English,egendom,property
 Swedish,English,hederlig,honest
 Swedish,English,förråda,betray
@@ -548,11 +421,9 @@ Swedish,English,upplysningar,information
 Swedish,English,skåla,toast
 Swedish,English,oslagbara,unbeatable
 Swedish,English,alldaglig,ordinary
-Swedish,English,trång,tight
 Swedish,English,golv,floor
 Swedish,English,vika ihop,fold up
 Swedish,English,förnuftig,sensible
-English,Swedish,reasonable,förnuftig
 Swedish,English,vana mig vid,get used to
 Swedish,English,förete,exhibit
 Swedish,English,otillräckliga,insufficient
@@ -561,13 +432,10 @@ Swedish,English,frånsett,apart from
 Swedish,English,underrätta,notify
 Swedish,English,nådig,gracious
 Swedish,English,göra sig av,to get rid of
-Swedish,English,pjäs,piece
 Swedish,English,efterapning,imitation
 Swedish,English,räkning,account
 Swedish,English,umgick,hung out
 Swedish,English,svans,tail
-English,Swedish,concept,begrepp
-English,Swedish,mentainance,underhåll
 Swedish,English,skärm,screen
 Swedish,English,pallra sig ut,to get out
 Swedish,English,mottagare,receiver
@@ -577,11 +445,9 @@ Swedish,English,fåtölj,armchair
 Swedish,English,beslutsfattande,decision-making
 Swedish,English,vansinnig,insane
 Swedish,English,bevaka,guard
-Swedish,English,bevaka,monitor
 Swedish,English,anklaga,accuse
 Swedish,English,förträffligt,excellent
 Swedish,English,lurendrejeri,fraud
-Swedish,English,lurendrejeri,scam
 Swedish,English,endast,only
 Swedish,English,förhindra,prevent
 Swedish,English,väsensskilda,fundamentally different
@@ -609,30 +475,22 @@ Swedish,English,vissla,whistle
 Swedish,English,ådror,veins
 Swedish,English,häftiga lidelse,intense passion
 Swedish,English,åtrå,lust
-Swedish,English,åtrå,desire
 Swedish,English,uthållig,persistent
 Swedish,English,tapper,brave
 Swedish,English,gardiner,curtains
 Swedish,English,yrsel,dizziness
 Swedish,English,bryta sönder,break to pieces
-Swedish,English,bryta sönder,break apart
 Swedish,English,brak,crash
 Swedish,English,fiendskap,hostility
 Swedish,English,prydlig,neat
-Swedish,English,prydlig,tidy
 Swedish,English,tvätta,wash
 Swedish,English,stryka,iron
-English,Swedish,show,förevisa
-English,Swedish,show,uppvisa
 Swedish,English,avseende,respect
-Swedish,English,avseende,regard
 Swedish,English,slå in,wrap
 Swedish,English,åthävor,manners
 Swedish,English,omsättning,sale
-Swedish,English,omsättning,turnover
 Swedish,English,inrättning,institution
 Swedish,English,upprymd,elated
-Swedish,English,upprymd,exhilarated
 Swedish,English,slå av,turn off
 Swedish,English,överdriven,excessive
 Swedish,English,framhåller,emphasizes
@@ -642,15 +500,11 @@ Swedish,English,gynnas av,benefit from
 Swedish,English,skryta,boast
 Swedish,English,dop,baptism
 Swedish,English,likgiltig,indifferent
-English,Swedish,show off,skryta
 Swedish,English,tillåter,allows
-English,Swedish,in general,i allmänhet
-English,Swedish,rape,våldta
 Swedish,English,ta hänsyn till,take into account
 Swedish,English,besk,bitter
 Swedish,English,äktenskap,marriage
 Swedish,English,återstår att ta ställning till,remains to be decided
-Swedish,English,beträffande,concerning
 Swedish,English,kryphål,loophole
 Swedish,English,arvsanlag,genetic predisposition
 Swedish,English,anlag för,predisposition for
@@ -671,10 +525,8 @@ Swedish,English,tillämpa,apply
 Swedish,English,införskaffa,acquire
 Swedish,English,styrka,strength
 Swedish,English,enas om,agree on
-English,Swedish,conditions,villkor
 Swedish,English,rinnande näsa,runny nose
 Swedish,English,rinnande,running
-Swedish,English,rinnande,runny
 Swedish,English,bete sig,behave
 Swedish,English,gömma sig,hide
 Swedish,English,rån,robbery
@@ -686,14 +538,10 @@ Swedish,English,konstgjord,artificial
 Swedish,English,ursprung,origin
 Swedish,English,suger ut,sucks out
 Swedish,English,rör,tube
-Swedish,English,rör,pipe
 Swedish,English,kvick,witty
 Swedish,English,oväntat,unexpectedly
 Swedish,English,reta,anger
-Swedish,English,reta,tease
-Swedish,English,reta,irritate
 Swedish,English,sinnelag,temperament
-Swedish,English,sinnelag,disposition
 Swedish,English,aktsam,careful
 Swedish,English,oändlig,infinite
 Swedish,English,åtgärd,measure
@@ -718,7 +566,6 @@ Swedish,English,stolt,proud
 Swedish,English,roman,novel
 Swedish,English,försörjning,providing
 Swedish,English,dröja,be delayed
-Swedish,English,dröja,linger
 Swedish,English,oförutsedda,unforeseen
 Swedish,English,nödgade,forced
 Swedish,English,Till råga på allt,To top it all off
@@ -731,14 +578,11 @@ Swedish,English,ihågkommen,remembered
 Swedish,English,medge,admit
 Swedish,English,hävda sig mot,assert oneself against
 Swedish,English,hävda,assert
-Swedish,English,hävda,claim
 Swedish,English,till gagn för,for the benefit of
 Swedish,English,stiftelse,foundation
 Swedish,English,ansenlig,substantial
-Swedish,English,ansenlig,considerable
 Swedish,English,klandra,blame
 Swedish,English,trösta,console
-Swedish,English,trösta,comfort
 Swedish,English,lovordar,praise
 Swedish,English,sunt förnuft,common sense
 Swedish,English,omtanke,consideration
@@ -765,14 +609,11 @@ Swedish,English,återvändo,return
 Swedish,English,satsa,invest
 Swedish,English,tycker synd,feel sorry
 Swedish,English,främsta,prime
-Swedish,English,framstående,distinguished
 Swedish,English,det tyder på att,it indicates that
 Swedish,English,avsevärt,considerably
 Swedish,English,betydligt,considerably
 Swedish,English,fara,travel
-Swedish,English,fara,go
 Swedish,English,bestående,permanent
-Swedish,English,bestående,consisting
 Swedish,English,tillfälliga,temporary
 Swedish,English,sällsam,Strange
 Swedish,English,flytta undan,move away
@@ -783,12 +624,10 @@ Swedish,English,beundra,admire
 Swedish,English,i ett nafs,in a flash
 Swedish,English,i synnerhet,in particular
 Swedish,English,butter,grumpy
-Swedish,English,butter,bitter
 Swedish,English,ilsken,furious
 Swedish,English,vore,would be
 Swedish,English,vore det,would it be
 Swedish,English,besked,message
-Swedish,English,besked,answer
 Swedish,English,avklippa,cut off
 Swedish,English,nånsin,ever
 Swedish,English,alltför,too
@@ -835,8 +674,6 @@ Swedish,English,skatteverket,tax office
 Swedish,English,slutsa,conclude
 Swedish,English,slutsase,conclusion
 Swedish,English,anser,considers
-English,Swedish,ultrasound,ultraljud
-English,Swedish,miscarriage,missfall
 Swedish,English,känslomässig,emotional
 Swedish,English,avböja,decline
 Swedish,English,verksamhet,Operation
@@ -851,7 +688,6 @@ Swedish,English,tycks sluta,seems to end
 Swedish,English,mödosamma,laborious
 Swedish,English,blomstrande,thriving
 Swedish,English,strapats,hardship
-Swedish,English,förtjäna,earn
 Swedish,English,hitintills,so far
 Swedish,English,upprätthålla,maintain
 Swedish,English,trevnad,comfort
@@ -897,7 +733,6 @@ Swedish,English,svartkrutet,black powder
 Swedish,English,opålitliga,unreliable
 Swedish,English,ersätta,replace
 Swedish,English,skylla,blame
-English,Swedish,blame,skylla
 Swedish,English,outsinlig,endless
 Swedish,English,påminna,remind
 Swedish,English,slaganfall,stroke
@@ -953,7 +788,6 @@ Swedish,English,labil,labile
 Swedish,English,isär,apart
 Swedish,English,fullkomlig,perfect
 Swedish,English,ömsesidig,mutual
-English,Swedish,as far as,så långt som
 Swedish,English,vettig,sensible
 Swedish,English,otänkbart,unthinkable
 Swedish,English,umgås,hang out
@@ -972,10 +806,7 @@ Swedish,English,nämna,mention
 Swedish,English,stjäla,steal
 Swedish,English,bekymmer,concern
 Swedish,English,bedja om,ask for
-English,Swedish,subtitles,undertexter
 Swedish,English,ryggsäck,backpack
-English,Swedish,night shift,nattskift
-English,Swedish,misconception,missuppfattning
 Swedish,English,påminnelse,reminder
 Swedish,English,avvikelser,deviations
 Swedish,English,försiktig,careful
@@ -985,7 +816,6 @@ Swedish,English,utforska,explore
 Swedish,English,påstår,claims
 Swedish,English,bro,bridge
 Swedish,English,slutända,ultimately
-English,Swedish,check,kontrollera
 Swedish,English,oskyldig,innocent
 Swedish,English,åsikt,opinion
 Swedish,English,påstående,statement
@@ -999,14 +829,9 @@ Swedish,English,censurerar,censors
 Swedish,English,allmänhet,public
 Swedish,English,yttrandefriheten,freedom of expression
 Swedish,English,skapar en stark gemenskap,creates a strong community
-English,Swedish,believe,tro
-English,Swedish,trust,lita på
-English,Swedish,relate,relatera
 Swedish,English,onödiga,unnecessary
 Swedish,English,slut,final
 Swedish,English,lyhördhet,responsiveness
-English,Swedish,oxygen,syre
-English,Greek,incentive,κίνητρο
 Swedish,English,avgörande,crucial
 Swedish,English,förvandlas,turn
 Swedish,English,kamp,struggle
@@ -1157,7 +982,6 @@ Swedish,English,riktar sig,is aimed at
 Swedish,English,rädslan,the fear
 Swedish,English,fråntas,be deprived of
 Swedish,English,övertyga,convince
-English,Swedish,worse,värre
 Swedish,English,angelägenheter,affairs
 Swedish,English,tongivande,keynote speaker
 Swedish,English,syn,view
