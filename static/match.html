@@ -1,0 +1,1143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Word Match — Svenska 💕</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg-1:        #ffe0ec;
+    --bg-2:        #ffb3d1;
+    --bg-3:        #d896c8;
+    --card-back:   #ff5e87;
+    --card-back-2: #ff89a8;
+    --card-front:  #fff5f7;
+    --card-border: #c2185b;
+    --pink:        #ff5e87;
+    --pink-deep:   #c2185b;
+    --pink-light:  #ffb3d1;
+    --gold:        #ffd23f;
+    --green:       #4caf50;
+    --text:        #4a1a3d;
+    --muted:       #8b6080;
+    --shadow:      rgba(194, 24, 91, .25);
+  }
+
+  html, body {
+    background: linear-gradient(180deg, var(--bg-1) 0%, var(--bg-2) 50%, var(--bg-3) 100%);
+    color: var(--text);
+    font-family: 'Quicksand', 'Comic Sans MS', system-ui, sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+    user-select: none;
+    touch-action: manipulation;
+  }
+
+  /* Floating hearts background */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image:
+      radial-gradient(circle at 10% 20%, rgba(255,94,135,.15) 0, transparent 30%),
+      radial-gradient(circle at 80% 60%, rgba(255,179,209,.2) 0, transparent 35%),
+      radial-gradient(circle at 50% 90%, rgba(216,150,200,.15) 0, transparent 30%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .screen { display: none; min-height: 100vh; position: relative; z-index: 2; }
+  .screen.active { display: flex; flex-direction: column; }
+
+  /* ═══ TITLE ═══ */
+  #title-screen {
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 24px;
+    overflow: auto;
+  }
+
+  .floating-hearts {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    overflow: hidden;
+    z-index: 0;
+  }
+  .float-heart {
+    position: absolute;
+    font-size: 1.5rem;
+    opacity: .4;
+    animation: float-up 6s linear infinite;
+  }
+  @keyframes float-up {
+    0%   { transform: translateY(100vh) rotate(0deg); opacity: 0; }
+    10%  { opacity: .5; }
+    90%  { opacity: .5; }
+    100% { transform: translateY(-20vh) rotate(45deg); opacity: 0; }
+  }
+
+  .title-icon {
+    font-size: 5rem;
+    margin-bottom: 8px;
+    animation: heartbeat 1.2s ease-in-out infinite;
+    filter: drop-shadow(0 6px 16px rgba(194,24,91,.4));
+    z-index: 1;
+  }
+  @keyframes heartbeat {
+    0%,100% { transform: scale(1); }
+    25%     { transform: scale(1.15); }
+    50%     { transform: scale(1); }
+    75%     { transform: scale(1.1); }
+  }
+
+  .title-name {
+    font-size: clamp(2rem, 7vw, 3.5rem);
+    font-weight: 900;
+    color: var(--pink-deep);
+    text-shadow:
+      2px 2px 0 #fff,
+      4px 4px 12px rgba(194,24,91,.3);
+    letter-spacing: -1px;
+    margin-bottom: 4px;
+    line-height: 1;
+    z-index: 1;
+  }
+  .title-tag {
+    font-size: .85rem;
+    color: var(--pink);
+    letter-spacing: 4px;
+    margin-bottom: 28px;
+    font-weight: 600;
+    text-transform: uppercase;
+    z-index: 1;
+  }
+  .title-tag::before, .title-tag::after { content: '💕 '; }
+  .title-tag::after { content: ' 💕'; }
+
+  .setup-card {
+    background: rgba(255,255,255,.85);
+    backdrop-filter: blur(10px);
+    border: 3px solid var(--pink);
+    border-radius: 20px;
+    padding: 24px;
+    max-width: 400px;
+    width: 100%;
+    box-shadow:
+      0 10px 30px var(--shadow),
+      inset 0 1px 0 rgba(255,255,255,.5);
+    margin-bottom: 14px;
+    z-index: 1;
+  }
+  .setup-card h3 {
+    font-size: .8rem;
+    color: var(--pink-deep);
+    letter-spacing: 2px;
+    margin-bottom: 12px;
+    text-align: center;
+    text-transform: uppercase;
+    font-weight: 800;
+  }
+
+  .pairs-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  .pair-btn {
+    background: #fff;
+    color: var(--pink-deep);
+    border: 2px solid var(--pink-light);
+    padding: 12px 4px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: .9rem;
+    font-weight: 800;
+    transition: all .12s;
+  }
+  .pair-btn:hover { border-color: var(--pink); transform: translateY(-2px); }
+  .pair-btn.selected {
+    background: linear-gradient(135deg, var(--pink), var(--pink-deep));
+    color: #fff;
+    border-color: var(--pink-deep);
+    box-shadow: 0 4px 12px var(--shadow);
+  }
+
+  .play-btn {
+    background: linear-gradient(135deg, var(--pink), var(--pink-deep));
+    color: #fff;
+    border: none;
+    padding: 16px 28px;
+    border-radius: 99px;
+    font-size: 1rem;
+    font-weight: 900;
+    letter-spacing: 2px;
+    cursor: pointer;
+    box-shadow: 0 6px 20px var(--shadow);
+    transition: transform .15s;
+    width: 100%;
+    text-transform: uppercase;
+    font-family: inherit;
+  }
+  .play-btn:hover { transform: translateY(-3px); box-shadow: 0 10px 30px var(--shadow); }
+  .play-btn:active { transform: translateY(0); }
+
+  .ghost-link {
+    color: var(--pink-deep);
+    font-size: .8rem;
+    text-decoration: none;
+    margin-top: 14px;
+    font-weight: 600;
+  }
+  .ghost-link:hover { text-decoration: underline; }
+
+  .high-score-line {
+    margin-top: 14px;
+    color: var(--pink-deep);
+    font-size: .9rem;
+    font-weight: 700;
+    z-index: 1;
+  }
+
+  /* ═══ GAME ═══ */
+  #game-screen {
+    align-items: center;
+    padding: 12px;
+  }
+
+  .game-hud {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    max-width: 600px;
+    margin-bottom: 14px;
+  }
+  .hud-stat {
+    background: rgba(255,255,255,.85);
+    backdrop-filter: blur(10px);
+    border: 2px solid var(--pink);
+    border-radius: 12px;
+    padding: 8px 14px;
+    text-align: center;
+    box-shadow: 0 2px 8px var(--shadow);
+  }
+  .hud-stat .lbl {
+    display: block;
+    color: var(--muted);
+    font-size: .55rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    font-weight: 700;
+  }
+  .hud-stat .v {
+    color: var(--pink-deep);
+    font-size: 1rem;
+    font-weight: 900;
+  }
+
+  .quit-btn {
+    background: rgba(255,255,255,.85);
+    color: var(--pink-deep);
+    border: 2px solid var(--pink-light);
+    padding: 8px 14px;
+    font-family: inherit;
+    font-size: .65rem;
+    cursor: pointer;
+    border-radius: 12px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  .quit-btn:hover { color: var(--pink-deep); border-color: var(--pink-deep); }
+
+  /* The card grid */
+  .card-grid {
+    display: grid;
+    gap: 10px;
+    width: 100%;
+    max-width: 600px;
+    margin-bottom: 14px;
+  }
+  /* Lay out grid based on card count via inline style */
+
+  .card {
+    aspect-ratio: 3 / 4;
+    perspective: 800px;
+    cursor: pointer;
+  }
+  .card-inner {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    transform-style: preserve-3d;
+    transition: transform .5s cubic-bezier(.4, 1.6, .5, 1);
+  }
+  .card.flipped .card-inner {
+    transform: rotateY(180deg);
+  }
+  .card.matched .card-inner {
+    transform: rotateY(180deg) scale(.95);
+    animation: matched-pulse .8s ease;
+  }
+  @keyframes matched-pulse {
+    0%   { transform: rotateY(180deg) scale(1); }
+    30%  { transform: rotateY(180deg) scale(1.15); }
+    100% { transform: rotateY(180deg) scale(.95); }
+  }
+
+  .card-face {
+    position: absolute;
+    inset: 0;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px;
+    font-weight: 800;
+    text-align: center;
+    box-shadow: 0 4px 12px var(--shadow);
+    overflow: hidden;
+  }
+
+  .card-back {
+    background:
+      radial-gradient(circle at 30% 30%, var(--card-back-2), var(--card-back));
+    border: 3px solid var(--card-border);
+    color: rgba(255,255,255,.95);
+    font-size: 2rem;
+    text-shadow: 0 2px 4px rgba(0,0,0,.2);
+    position: relative;
+  }
+  .card-back::before {
+    content: '💕';
+    font-size: 2rem;
+    animation: heartbeat 1.5s ease-in-out infinite;
+  }
+  /* Inner pattern on the back */
+  .card-back::after {
+    content: '';
+    position: absolute;
+    inset: 6px;
+    border: 2px dashed rgba(255,255,255,.4);
+    border-radius: 8px;
+    pointer-events: none;
+  }
+
+  .card-front {
+    background: var(--card-front);
+    border: 3px solid var(--pink);
+    color: var(--text);
+    transform: rotateY(180deg);
+    flex-direction: column;
+    gap: 4px;
+  }
+  .card-lang {
+    font-size: .55rem;
+    color: var(--pink);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    font-weight: 700;
+    margin-bottom: 2px;
+  }
+  .card-text {
+    font-size: clamp(.7rem, 2.2vw, 1rem);
+    line-height: 1.2;
+    color: var(--text);
+    word-break: break-word;
+  }
+
+  .card.matched .card-front {
+    background: linear-gradient(135deg, #ffe9f0, #fff5f7);
+    border-color: var(--green);
+    box-shadow: 0 0 20px rgba(76,175,80,.4);
+  }
+  .card.matched .card-lang { color: var(--green); }
+  .card.wrong-flash .card-front {
+    background: #ffd6dc;
+    border-color: #d32f2f;
+    animation: wrong-shake .4s;
+  }
+  @keyframes wrong-shake {
+    0%,100% { transform: rotateY(180deg) translateX(0); }
+    25%     { transform: rotateY(180deg) translateX(-4px); }
+    75%     { transform: rotateY(180deg) translateX(4px); }
+  }
+
+  /* Big heart explosion overlay */
+  .heart-burst {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 90;
+    overflow: hidden;
+  }
+  .burst-heart {
+    position: absolute;
+    font-size: 2.5rem;
+    pointer-events: none;
+    will-change: transform, opacity;
+  }
+
+  /* Big "Match!" / "I love you" text */
+  .floating-msg {
+    position: fixed;
+    top: 35%;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: clamp(2rem, 8vw, 4rem);
+    font-weight: 900;
+    color: var(--pink-deep);
+    text-shadow:
+      0 0 0 #fff,
+      3px 3px 0 #fff,
+      6px 6px 20px rgba(194,24,91,.3);
+    pointer-events: none;
+    z-index: 100;
+    opacity: 0;
+    letter-spacing: -2px;
+    text-align: center;
+    line-height: 1;
+  }
+  .floating-msg.show { animation: msg-pop 1.4s ease-out; }
+  @keyframes msg-pop {
+    0%   { opacity: 0; transform: translate(-50%, 30px) scale(.5); }
+    20%  { opacity: 1; transform: translate(-50%, 0) scale(1.3) rotate(-3deg); }
+    40%  { transform: translate(-50%, 0) scale(1.1) rotate(2deg); }
+    70%  { opacity: 1; transform: translate(-50%, -10px) scale(1) rotate(0); }
+    100% { opacity: 0; transform: translate(-50%, -50px) scale(.9); }
+  }
+
+  /* Particle layer */
+  .fx-layer {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 50;
+    overflow: hidden;
+  }
+
+  /* ═══ END SCREEN — VICTORY! ═══ */
+  #end-screen {
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    text-align: center;
+    overflow: auto;
+  }
+
+  .victory-hearts {
+    font-size: 4rem;
+    margin-bottom: 12px;
+    animation: heartbeat 1s infinite;
+  }
+
+  .end-banner {
+    font-size: clamp(2rem, 8vw, 3.5rem);
+    font-weight: 900;
+    color: var(--pink-deep);
+    text-shadow: 2px 2px 0 #fff, 0 0 30px rgba(194,24,91,.4);
+    letter-spacing: -1px;
+    margin-bottom: 6px;
+    line-height: 1;
+  }
+
+  .love-message {
+    background: rgba(255,255,255,.9);
+    backdrop-filter: blur(10px);
+    border: 3px solid var(--pink);
+    border-radius: 16px;
+    padding: 24px;
+    max-width: 420px;
+    width: 100%;
+    margin: 18px 0;
+    box-shadow: 0 8px 24px var(--shadow);
+  }
+  .love-message .big-text {
+    font-size: 1.6rem;
+    color: var(--pink-deep);
+    margin-bottom: 8px;
+    font-weight: 900;
+    letter-spacing: 1px;
+  }
+  .love-message .sub-text {
+    color: var(--text);
+    font-size: .9rem;
+    font-style: italic;
+  }
+  .heart-divider {
+    text-align: center;
+    margin: 12px 0;
+    font-size: 1.2rem;
+    letter-spacing: 12px;
+  }
+
+  .end-stats {
+    background: rgba(255,255,255,.9);
+    border: 3px solid var(--pink);
+    border-radius: 14px;
+    padding: 14px 20px;
+    margin-bottom: 16px;
+    width: 100%;
+    max-width: 420px;
+    box-shadow: 0 6px 18px var(--shadow);
+  }
+  .end-stat-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 7px 0;
+    border-bottom: 1px solid var(--pink-light);
+    font-size: .9rem;
+  }
+  .end-stat-row:last-child { border-bottom: none; }
+  .end-stat-row .lbl { color: var(--muted); font-size: .7rem; letter-spacing: 1px; text-transform: uppercase; font-weight: 700; }
+  .end-stat-row .v { color: var(--pink-deep); font-weight: 900; }
+
+  .new-record {
+    color: var(--gold);
+    font-size: 1rem;
+    font-weight: 900;
+    letter-spacing: 3px;
+    margin-top: 6px;
+    animation: record-pulse .8s infinite;
+    text-shadow: 0 2px 0 var(--pink-deep);
+  }
+  @keyframes record-pulse { 50% { transform: scale(1.1); } }
+
+  .end-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+    max-width: 420px;
+  }
+
+  /* Loading */
+  .spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid var(--pink-light);
+    border-top-color: var(--pink-deep);
+    border-radius: 50%;
+    animation: spin .7s linear infinite;
+    margin: 30px auto;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Mobile */
+  @media (max-width: 480px) {
+    .card-text { font-size: .65rem; }
+    .card-lang { font-size: .5rem; }
+    .card-back::before { font-size: 1.4rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="floating-hearts" id="floating-hearts"></div>
+<div class="fx-layer" id="fx-layer"></div>
+<div class="heart-burst" id="heart-burst"></div>
+<div class="floating-msg" id="floating-msg"></div>
+
+<!-- ═══ TITLE ═══ -->
+<div class="screen active" id="title-screen">
+  <div class="title-icon">💕</div>
+  <div class="title-name">WORD MATCH</div>
+  <div class="title-tag">Find Your Pairs</div>
+
+  <div class="setup-card">
+    <h3>Number of pairs</h3>
+    <div class="pairs-grid" id="pairs-options">
+      <button class="pair-btn" data-pairs="6">6</button>
+      <button class="pair-btn selected" data-pairs="8">8</button>
+      <button class="pair-btn" data-pairs="10">10</button>
+      <button class="pair-btn" data-pairs="12">12</button>
+      <button class="pair-btn" data-pairs="15">15</button>
+    </div>
+    <p style="text-align:center;color:var(--muted);font-size:.7rem;margin-top:8px;font-style:italic">
+      = <span id="card-count-display">16</span> cards total
+    </p>
+  </div>
+
+  <button class="play-btn" onclick="startGame()" style="max-width:400px">▶ Start Matching 💖</button>
+  <a href="/" class="ghost-link">← back to main app</a>
+  <div class="high-score-line" id="high-score-display"></div>
+</div>
+
+<!-- ═══ LOADING ═══ -->
+<div class="screen" id="loading-screen" style="align-items:center;justify-content:center">
+  <div class="spinner"></div>
+  <p style="font-size:.85rem;color:var(--pink-deep);letter-spacing:2px;font-weight:700">LOADING WORDS 💕</p>
+</div>
+
+<!-- ═══ GAME ═══ -->
+<div class="screen" id="game-screen">
+  <div class="game-hud">
+    <div class="hud-stat">
+      <span class="lbl">Pairs</span>
+      <span class="v"><span id="stat-found">0</span>/<span id="stat-pairs">0</span></span>
+    </div>
+    <div class="hud-stat">
+      <span class="lbl">Moves</span>
+      <span class="v" id="stat-moves">0</span>
+    </div>
+    <div class="hud-stat">
+      <span class="lbl">Time</span>
+      <span class="v" id="stat-time">0:00</span>
+    </div>
+    <button class="quit-btn" onclick="quitGame()">Quit</button>
+  </div>
+
+  <div class="card-grid" id="card-grid"></div>
+</div>
+
+<!-- ═══ END / VICTORY ═══ -->
+<div class="screen" id="end-screen">
+  <div class="victory-hearts">💕💖💕</div>
+  <div class="end-banner">YOU FOUND<br>ALL THE PAIRS!</div>
+  <div id="new-record-line"></div>
+
+  <div class="love-message">
+    <div class="big-text">I LOVE YOU 💖</div>
+    <div class="heart-divider">💕 💖 💗 💖 💕</div>
+    <div class="sub-text">Jag älskar dig så mycket<br>(I love you so much)</div>
+  </div>
+
+  <div class="end-stats">
+    <div class="end-stat-row"><span class="lbl">Pairs Found</span><span class="v" id="end-pairs">0</span></div>
+    <div class="end-stat-row"><span class="lbl">Total Moves</span><span class="v" id="end-moves">0</span></div>
+    <div class="end-stat-row"><span class="lbl">Time</span><span class="v" id="end-time">0:00</span></div>
+    <div class="end-stat-row"><span class="lbl">Best Time</span><span class="v" id="end-best-time">—</span></div>
+  </div>
+
+  <div class="end-actions">
+    <button class="play-btn" onclick="startGame()">💕 Play Again</button>
+    <button class="quit-btn" onclick="goToTitle()" style="padding:12px">⏎ Main Menu</button>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════════════════════════════════════════
+// CONFIG
+// ════════════════════════════════════════════════════════════════════════════
+const CONFIG = {
+  FLIP_BACK_DELAY: 1100,    // ms before unmatched cards flip back
+  MATCH_CELEBRATION_MS: 700,
+};
+
+// ════════════════════════════════════════════════════════════════════════════
+// AUDIO
+// ════════════════════════════════════════════════════════════════════════════
+let audioCtx = null;
+function getCtx() {
+  if (!audioCtx) {
+    try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+    catch { audioCtx = null; }
+  }
+  return audioCtx;
+}
+document.addEventListener('click', () => {
+  const c = getCtx();
+  if (c && c.state === 'suspended') c.resume();
+});
+
+function playFlip() {
+  const ctx = getCtx(); if (!ctx) return;
+  const t = ctx.currentTime;
+  const o = ctx.createOscillator();
+  const g = ctx.createGain();
+  o.type = 'triangle';
+  o.frequency.setValueAtTime(800, t);
+  o.frequency.exponentialRampToValueAtTime(400, t + 0.08);
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(0.15, t + 0.005);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + 0.1);
+  o.connect(g).connect(ctx.destination);
+  o.start(t); o.stop(t + 0.12);
+}
+
+function playMatch() {
+  const ctx = getCtx(); if (!ctx) return;
+  const t = ctx.currentTime;
+  // Cute ascending arpeggio
+  [523, 659, 784, 1046].forEach((f, i) => {
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.type = 'triangle';
+    o.frequency.setValueAtTime(f, t + i * 0.08);
+    g.gain.setValueAtTime(0.0001, t + i * 0.08);
+    g.gain.exponentialRampToValueAtTime(0.18, t + i * 0.08 + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + i * 0.08 + 0.3);
+    o.connect(g).connect(ctx.destination);
+    o.start(t + i * 0.08); o.stop(t + i * 0.08 + 0.32);
+  });
+}
+
+function playMismatch() {
+  const ctx = getCtx(); if (!ctx) return;
+  const t = ctx.currentTime;
+  const o = ctx.createOscillator();
+  const g = ctx.createGain();
+  o.type = 'sine';
+  o.frequency.setValueAtTime(330, t);
+  o.frequency.linearRampToValueAtTime(220, t + 0.2);
+  g.gain.setValueAtTime(0.15, t);
+  g.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
+  o.connect(g).connect(ctx.destination);
+  o.start(t); o.stop(t + 0.27);
+}
+
+function playVictory() {
+  const ctx = getCtx(); if (!ctx) return;
+  const t = ctx.currentTime;
+  // Triumphant fanfare
+  [523, 659, 784, 1046, 1318].forEach((f, i) => {
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.type = 'triangle';
+    o.frequency.setValueAtTime(f, t + i * 0.12);
+    g.gain.setValueAtTime(0.0001, t + i * 0.12);
+    g.gain.exponentialRampToValueAtTime(0.22, t + i * 0.12 + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + i * 0.12 + 0.5);
+    o.connect(g).connect(ctx.destination);
+    o.start(t + i * 0.12); o.stop(t + i * 0.12 + 0.55);
+  });
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// STATE
+// ════════════════════════════════════════════════════════════════════════════
+const SAVE_KEY = 'svenska-match-save-v1';
+const HEARTS = ['💕','💖','💗','💝','💘','❤️','🩷','💞','💓'];
+let bestTimes = {};
+let WORDS = [];
+
+const setup = {
+  pairCount: 8,
+};
+
+const game = {
+  active: false,
+  cards: [],          // [{id, word, lang ('sv'|'en'), pairId, matched, flipped, el}]
+  flippedQueue: [],   // 0, 1, or 2 cards currently flipped
+  pairsFound: 0,
+  moves: 0,
+  startTime: 0,
+  timerId: null,
+  lockBoard: false,   // briefly while showing mismatch
+};
+
+// ════════════════════════════════════════════════════════════════════════════
+// HELPERS
+// ════════════════════════════════════════════════════════════════════════════
+const $ = id => document.getElementById(id);
+const shuffle = arr => arr.slice().sort(() => Math.random() - .5);
+const norm = s => s.toLowerCase().trim();
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  $(id).classList.add('active');
+}
+
+function loadBestTimes() {
+  try {
+    const stored = localStorage.getItem(SAVE_KEY);
+    bestTimes = stored ? JSON.parse(stored).bestTimes || {} : {};
+  } catch { bestTimes = {}; }
+
+  const best = bestTimes[setup.pairCount];
+  $('high-score-display').innerHTML = best ? `🏆 Best for ${setup.pairCount} pairs: ${formatTime(best)}` : '';
+}
+loadBestTimes();
+
+function saveBestTime(pairCount, time) {
+  const prev = bestTimes[pairCount];
+  if (!prev || time < prev) {
+    bestTimes[pairCount] = time;
+    localStorage.setItem(SAVE_KEY, JSON.stringify({ bestTimes }));
+    return true;
+  }
+  return false;
+}
+
+function formatTime(s) {
+  const m = Math.floor(s / 60);
+  const sec = Math.floor(s % 60);
+  return `${m}:${sec.toString().padStart(2, '0')}`;
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// SETUP CARD
+// ════════════════════════════════════════════════════════════════════════════
+function updateCardCountDisplay() {
+  $('card-count-display').textContent = setup.pairCount * 2;
+}
+document.querySelectorAll('#pairs-options .pair-btn').forEach(btn => {
+  btn.onclick = () => {
+    document.querySelectorAll('#pairs-options .pair-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    setup.pairCount = parseInt(btn.dataset.pairs, 10);
+    updateCardCountDisplay();
+    loadBestTimes();
+  };
+});
+updateCardCountDisplay();
+
+// ════════════════════════════════════════════════════════════════════════════
+// FLOATING HEARTS BACKGROUND
+// ════════════════════════════════════════════════════════════════════════════
+function spawnFloatingHearts() {
+  const layer = $('floating-hearts');
+  layer.innerHTML = '';
+  for (let i = 0; i < 12; i++) {
+    const h = document.createElement('div');
+    h.className = 'float-heart';
+    h.textContent = HEARTS[Math.floor(Math.random() * HEARTS.length)];
+    h.style.left = Math.random() * 100 + '%';
+    h.style.animationDelay = (Math.random() * 6) + 's';
+    h.style.animationDuration = (5 + Math.random() * 4) + 's';
+    layer.appendChild(h);
+  }
+}
+spawnFloatingHearts();
+
+// ════════════════════════════════════════════════════════════════════════════
+// LOAD WORDS
+// ════════════════════════════════════════════════════════════════════════════
+async function loadAllWords() {
+  showScreen('loading-screen');
+  try {
+    const info = await (await fetch('/api/info')).json();
+    const total = info.total_chapters;
+    const promises = [];
+    for (let i = 1; i <= total; i++) {
+      promises.push(fetch(`/api/words/${i}`).then(r => r.json()));
+    }
+    const results = await Promise.all(promises);
+    WORDS = results.flatMap(r => r.words);
+    return true;
+  } catch (e) {
+    alert('Failed to load words: ' + e.message);
+    showScreen('title-screen');
+    return false;
+  }
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// GAME FLOW
+// ════════════════════════════════════════════════════════════════════════════
+async function startGame() {
+  if (WORDS.length === 0) {
+    const ok = await loadAllWords();
+    if (!ok) return;
+  }
+  resetGame();
+  showScreen('game-screen');
+  buildBoard();
+  game.active = true;
+  game.startTime = performance.now();
+  startTimer();
+}
+
+function resetGame() {
+  game.cards = [];
+  game.flippedQueue = [];
+  game.pairsFound = 0;
+  game.moves = 0;
+  game.lockBoard = false;
+  if (game.timerId) { clearInterval(game.timerId); game.timerId = null; }
+  $('stat-found').textContent = 0;
+  $('stat-pairs').textContent = setup.pairCount;
+  $('stat-moves').textContent = 0;
+  $('stat-time').textContent = '0:00';
+}
+
+function startTimer() {
+  game.timerId = setInterval(() => {
+    if (!game.active) return;
+    const elapsed = (performance.now() - game.startTime) / 1000;
+    $('stat-time').textContent = formatTime(elapsed);
+  }, 500);
+}
+
+function quitGame() {
+  if (!confirm('Quit current game?')) return;
+  game.active = false;
+  if (game.timerId) clearInterval(game.timerId);
+  resetGame();
+  showScreen('title-screen');
+  spawnFloatingHearts();
+  loadBestTimes();
+}
+
+function goToTitle() {
+  showScreen('title-screen');
+  spawnFloatingHearts();
+  loadBestTimes();
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// BUILD BOARD
+// ════════════════════════════════════════════════════════════════════════════
+function buildBoard() {
+  // Pick `pairCount` distinct words
+  const picked = shuffle(WORDS).slice(0, setup.pairCount);
+
+  // Create 2 cards per word: one Swedish, one English
+  let cards = [];
+  picked.forEach((word, i) => {
+    cards.push({ id: `${i}-sv`, word, lang: 'sv', pairId: i, matched: false, flipped: false });
+    cards.push({ id: `${i}-en`, word, lang: 'en', pairId: i, matched: false, flipped: false });
+  });
+  cards = shuffle(cards);
+  game.cards = cards;
+
+  // Choose grid columns based on count for a nice rectangular shape
+  const total = cards.length;
+  let cols;
+  if (total <= 12) cols = 4;
+  else if (total <= 16) cols = 4;
+  else if (total <= 20) cols = 5;
+  else if (total <= 24) cols = 6;
+  else cols = 6;
+
+  const grid = $('card-grid');
+  grid.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+  grid.innerHTML = '';
+
+  cards.forEach(card => {
+    const el = document.createElement('div');
+    el.className = 'card';
+    el.dataset.id = card.id;
+    el.innerHTML = `
+      <div class="card-inner">
+        <div class="card-face card-back"></div>
+        <div class="card-face card-front">
+          <div class="card-lang">${card.lang === 'sv' ? '🇸🇪 Svenska' : '🇬🇧 English'}</div>
+          <div class="card-text">${escapeHtml(card.lang === 'sv' ? card.word.swedish : card.word.english)}</div>
+        </div>
+      </div>
+    `;
+    el.onclick = () => flipCard(card);
+    card.el = el;
+    grid.appendChild(el);
+  });
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  })[c]);
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// FLIP CARD
+// ════════════════════════════════════════════════════════════════════════════
+function flipCard(card) {
+  if (!game.active || game.lockBoard) return;
+  if (card.matched || card.flipped) return;
+  if (game.flippedQueue.length >= 2) return;
+
+  card.flipped = true;
+  card.el.classList.add('flipped');
+  playFlip();
+
+  game.flippedQueue.push(card);
+
+  if (game.flippedQueue.length === 2) {
+    game.moves++;
+    $('stat-moves').textContent = game.moves;
+    checkPair();
+  }
+}
+
+function checkPair() {
+  const [a, b] = game.flippedQueue;
+  game.lockBoard = true;
+
+  if (a.pairId === b.pairId && a.lang !== b.lang) {
+    // Match!
+    setTimeout(() => {
+      a.matched = true;
+      b.matched = true;
+      a.el.classList.add('matched');
+      b.el.classList.add('matched');
+      game.flippedQueue = [];
+      game.lockBoard = false;
+      game.pairsFound++;
+      $('stat-found').textContent = game.pairsFound;
+
+      // Celebrate the match
+      celebrateMatch(a.el, b.el);
+      playMatch();
+
+      if (game.pairsFound >= setup.pairCount) {
+        // All pairs found — VICTORY!
+        setTimeout(victory, 800);
+      }
+    }, 350);
+  } else {
+    // Wrong pair — flash + flip back
+    setTimeout(() => {
+      a.el.classList.add('wrong-flash');
+      b.el.classList.add('wrong-flash');
+    }, 200);
+    playMismatch();
+
+    setTimeout(() => {
+      a.flipped = false;
+      b.flipped = false;
+      a.el.classList.remove('flipped', 'wrong-flash');
+      b.el.classList.remove('flipped', 'wrong-flash');
+      game.flippedQueue = [];
+      game.lockBoard = false;
+    }, CONFIG.FLIP_BACK_DELAY);
+  }
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// MATCH CELEBRATION
+// ════════════════════════════════════════════════════════════════════════════
+function celebrateMatch(elA, elB) {
+  // Show floating "💕" message
+  const msgs = ['💕 Match!', '💖 Lovely!', '💗 Yes!', '💞 Perfect!', '🩷 Sweet!'];
+  const msg = msgs[Math.floor(Math.random() * msgs.length)];
+  showFloatingMsg(msg);
+
+  // Heart burst between the two cards
+  const ra = elA.getBoundingClientRect();
+  const rb = elB.getBoundingClientRect();
+  const cx = (ra.left + ra.right + rb.left + rb.right) / 4;
+  const cy = (ra.top + ra.bottom + rb.top + rb.bottom) / 4;
+  heartExplosion(cx, cy, 14);
+
+  // Connecting line of hearts
+  const steps = 6;
+  for (let i = 1; i < steps; i++) {
+    const t = i / steps;
+    const x = ra.left + ra.width / 2 + (rb.left + rb.width / 2 - ra.left - ra.width / 2) * t;
+    const y = ra.top + ra.height / 2 + (rb.top + rb.height / 2 - ra.top - ra.height / 2) * t;
+    setTimeout(() => spawnHeartAt(x, y, 1), i * 50);
+  }
+}
+
+function heartExplosion(cx, cy, count = 12) {
+  const layer = $('heart-burst');
+  for (let i = 0; i < count; i++) {
+    const h = document.createElement('div');
+    h.className = 'burst-heart';
+    h.textContent = HEARTS[Math.floor(Math.random() * HEARTS.length)];
+    h.style.left = cx + 'px';
+    h.style.top  = cy + 'px';
+    h.style.fontSize = (1.5 + Math.random() * 2) + 'rem';
+    layer.appendChild(h);
+
+    const angle = Math.random() * Math.PI * 2;
+    const dist = 80 + Math.random() * 200;
+    const dur = 800 + Math.random() * 700;
+    const rot = (Math.random() - .5) * 720;
+
+    h.animate(
+      [
+        { transform: 'translate(-50%,-50%) scale(.5) rotate(0)', opacity: 1 },
+        { transform: `translate(${Math.cos(angle)*dist - 8}px, ${Math.sin(angle)*dist - 8}px) scale(1.5) rotate(${rot}deg)`, opacity: 0 },
+      ],
+      { duration: dur, easing: 'cubic-bezier(.2,.8,.4,1)', fill: 'forwards' }
+    ).onfinish = () => h.remove();
+  }
+}
+
+function spawnHeartAt(x, y, count = 1) {
+  const layer = $('heart-burst');
+  for (let i = 0; i < count; i++) {
+    const h = document.createElement('div');
+    h.className = 'burst-heart';
+    h.textContent = HEARTS[Math.floor(Math.random() * HEARTS.length)];
+    h.style.left = x + 'px';
+    h.style.top = y + 'px';
+    h.style.fontSize = (1 + Math.random() * 1.5) + 'rem';
+    layer.appendChild(h);
+    h.animate(
+      [
+        { transform: 'translate(-50%,-50%) scale(.3)', opacity: 0 },
+        { transform: 'translate(-50%,-150%) scale(1.2)', opacity: 1, offset: 0.3 },
+        { transform: 'translate(-50%,-300%) scale(.8)', opacity: 0 },
+      ],
+      { duration: 1200, easing: 'ease-out', fill: 'forwards' }
+    ).onfinish = () => h.remove();
+  }
+}
+
+function showFloatingMsg(text) {
+  const el = $('floating-msg');
+  el.textContent = text;
+  el.classList.remove('show');
+  void el.offsetWidth;
+  el.classList.add('show');
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// VICTORY!
+// ════════════════════════════════════════════════════════════════════════════
+function victory() {
+  game.active = false;
+  if (game.timerId) clearInterval(game.timerId);
+
+  const elapsed = (performance.now() - game.startTime) / 1000;
+  const isNewRecord = saveBestTime(setup.pairCount, elapsed);
+
+  showScreen('end-screen');
+  $('end-pairs').textContent = setup.pairCount;
+  $('end-moves').textContent = game.moves;
+  $('end-time').textContent = formatTime(elapsed);
+  const best = bestTimes[setup.pairCount];
+  $('end-best-time').textContent = best ? formatTime(best) : '—';
+  $('new-record-line').innerHTML = isNewRecord ? '<div class="new-record">★ NEW BEST TIME ★</div>' : '';
+
+  playVictory();
+  bigVictoryHeartShow();
+}
+
+function bigVictoryHeartShow() {
+  // Massive cascade of hearts from the top
+  const layer = $('heart-burst');
+  for (let i = 0; i < 80; i++) {
+    setTimeout(() => {
+      const h = document.createElement('div');
+      h.className = 'burst-heart';
+      h.textContent = HEARTS[Math.floor(Math.random() * HEARTS.length)];
+      h.style.left = Math.random() * window.innerWidth + 'px';
+      h.style.top  = -50 + 'px';
+      h.style.fontSize = (1.5 + Math.random() * 2.5) + 'rem';
+      layer.appendChild(h);
+
+      const drift = (Math.random() - .5) * 200;
+      const dur = 2500 + Math.random() * 2500;
+      const rot = Math.random() * 720 - 360;
+
+      h.animate(
+        [
+          { transform: 'translate(-50%,-50%) rotate(0)', opacity: 1 },
+          { transform: `translate(${drift}px, ${window.innerHeight + 80}px) rotate(${rot}deg)`, opacity: .5 },
+        ],
+        { duration: dur, easing: 'cubic-bezier(.2,.6,.4,1)', fill: 'forwards' }
+      ).onfinish = () => h.remove();
+    }, i * 35);
+  }
+
+  // Periodically show "I love you" messages
+  const loveMessages = ['💖 I LOVE YOU!', '💕 ÄLSKAR DIG!', '💗 SO PROUD!', '💞 LIBELLULA!'];
+  loveMessages.forEach((m, i) => {
+    setTimeout(() => showFloatingMsg(m), 600 + i * 1300);
+  });
+}
+</script>
+</body>
+</html>
