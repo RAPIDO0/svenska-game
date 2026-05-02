@@ -1,0 +1,1656 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Word Darts — Svenska</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --felt-dark:  #0d3a1f;
+    --felt:       #1a5c34;
+    --felt-light: #267a45;
+    --wood-dark:  #3d2817;
+    --wood:       #6b4423;
+    --wood-light: #8b5a2b;
+    --gold:       #d4a850;
+    --gold-light: #f0c870;
+    --cream:      #f5e6d3;
+    --red:        #b22222;
+    --red-deep:   #7a1010;
+    --green:      #228b22;
+    --black:      #1a1a1a;
+    --text:       #f5e6d3;
+    --muted:      #a89478;
+  }
+
+  html, body {
+    background: radial-gradient(ellipse at center, #1a3d28 0%, #0a1d12 100%);
+    color: var(--text);
+    font-family: 'Georgia', 'Times New Roman', serif;
+    min-height: 100vh;
+    overflow: hidden;
+    user-select: none;
+    touch-action: none;
+  }
+
+  /* Wood-panel texture overlay */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background:
+      repeating-linear-gradient(90deg, transparent 0 100px, rgba(0,0,0,.04) 100px 102px),
+      radial-gradient(ellipse at 20% 30%, rgba(212,168,80,.06), transparent 60%);
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  .screen { display: none; min-height: 100vh; position: relative; z-index: 2; }
+  .screen.active { display: flex; flex-direction: column; }
+
+  /* ═══ TITLE ═══ */
+  #title-screen {
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 24px;
+    overflow: auto;
+  }
+
+  .title-board {
+    font-size: 5rem;
+    margin-bottom: 12px;
+    filter: drop-shadow(0 8px 16px rgba(0,0,0,.5));
+    animation: gentle-spin 8s linear infinite;
+  }
+  @keyframes gentle-spin {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+  }
+
+  .title-name {
+    font-size: clamp(2rem, 6vw, 3.5rem);
+    font-weight: 700;
+    color: var(--gold);
+    text-shadow:
+      0 2px 0 var(--wood-dark),
+      0 4px 12px rgba(0,0,0,.6);
+    letter-spacing: 4px;
+    margin-bottom: 4px;
+    font-style: italic;
+  }
+  .title-tag {
+    font-size: .8rem;
+    color: var(--cream);
+    letter-spacing: 6px;
+    margin-bottom: 30px;
+    opacity: .7;
+    text-transform: uppercase;
+  }
+
+  .tournament-card {
+    background:
+      linear-gradient(135deg, rgba(255,255,255,.04), rgba(0,0,0,.4)),
+      var(--felt);
+    border: 3px solid var(--wood);
+    border-radius: 12px;
+    padding: 28px;
+    max-width: 420px;
+    width: 100%;
+    box-shadow:
+      0 0 0 4px var(--wood-dark),
+      0 12px 40px rgba(0,0,0,.6),
+      inset 0 1px 0 rgba(255,255,255,.1);
+    margin-bottom: 16px;
+  }
+  .tournament-card h3 {
+    font-size: .85rem;
+    color: var(--gold);
+    letter-spacing: 3px;
+    margin-bottom: 14px;
+    text-align: center;
+    text-transform: uppercase;
+    font-style: italic;
+  }
+  .tournament-card h3:not(:first-child) { margin-top: 18px; }
+
+  .toggle-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(245,230,211,.1);
+  }
+  .toggle-row:last-child { border-bottom: none; }
+  .toggle-row .label {
+    color: var(--cream);
+    font-size: .9rem;
+  }
+  .toggle-row .desc {
+    color: var(--muted);
+    font-size: .7rem;
+    font-style: italic;
+  }
+
+  /* iOS-style toggle switch */
+  .toggle {
+    position: relative;
+    width: 50px;
+    height: 28px;
+    background: rgba(0,0,0,.4);
+    border-radius: 99px;
+    cursor: pointer;
+    border: 2px solid var(--wood);
+    transition: background .2s;
+  }
+  .toggle.on {
+    background: var(--gold);
+    border-color: var(--gold-light);
+  }
+  .toggle::after {
+    content: '';
+    position: absolute;
+    top: 2px; left: 2px;
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    background: var(--cream);
+    transition: transform .2s;
+    box-shadow: 0 2px 4px rgba(0,0,0,.3);
+  }
+  .toggle.on::after {
+    transform: translateX(22px);
+  }
+
+  .throws-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-top: 8px;
+  }
+  .throw-btn {
+    background: var(--wood-dark);
+    color: var(--cream);
+    border: 2px solid var(--wood);
+    padding: 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: .9rem;
+    font-weight: 700;
+    transition: all .15s;
+  }
+  .throw-btn:hover { border-color: var(--gold); }
+  .throw-btn.selected {
+    background: var(--gold);
+    color: var(--wood-dark);
+    border-color: var(--gold-light);
+    box-shadow: 0 0 12px rgba(212,168,80,.4);
+  }
+
+  .play-btn {
+    background: linear-gradient(180deg, var(--red), var(--red-deep));
+    color: var(--cream);
+    border: 3px solid var(--gold);
+    padding: 16px 28px;
+    font-family: inherit;
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: 3px;
+    cursor: pointer;
+    border-radius: 8px;
+    box-shadow:
+      0 0 0 2px var(--wood-dark),
+      0 6px 20px rgba(178,34,34,.5);
+    transition: all .15s;
+    width: 100%;
+    text-transform: uppercase;
+    font-style: italic;
+  }
+  .play-btn:hover { transform: translateY(-2px); box-shadow: 0 0 0 2px var(--wood-dark), 0 10px 28px rgba(178,34,34,.7); }
+  .play-btn:active { transform: translateY(0); }
+
+  .ghost-link {
+    color: var(--muted);
+    font-size: .75rem;
+    text-decoration: none;
+    margin-top: 16px;
+    letter-spacing: 1px;
+  }
+  .ghost-link:hover { color: var(--cream); }
+
+  .high-score-line {
+    color: var(--gold);
+    font-size: .85rem;
+    margin-top: 14px;
+    text-shadow: 0 0 8px rgba(212,168,80,.4);
+    font-style: italic;
+  }
+
+  /* ═══ GAME ═══ */
+  #game-screen {
+    align-items: center;
+    padding: 12px;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  .game-hud {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    max-width: 600px;
+    margin-bottom: 8px;
+    color: var(--cream);
+  }
+  .hud-stat {
+    background: rgba(0,0,0,.5);
+    border: 2px solid var(--wood);
+    border-radius: 6px;
+    padding: 6px 12px;
+    text-align: center;
+  }
+  .hud-stat .lbl {
+    display: block;
+    color: var(--muted);
+    font-size: .55rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+  .hud-stat .v {
+    color: var(--gold);
+    font-size: .95rem;
+    font-weight: 700;
+  }
+  .hud-stat .v.cream { color: var(--cream); }
+  .hud-stat .v.red { color: var(--red); }
+
+  .quit-btn {
+    background: transparent;
+    color: var(--muted);
+    border: 2px solid var(--muted);
+    padding: 6px 12px;
+    font-family: inherit;
+    font-size: .65rem;
+    cursor: pointer;
+    border-radius: 6px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  .quit-btn:hover { color: var(--red); border-color: var(--red); }
+
+  .question-banner {
+    background: linear-gradient(180deg, var(--wood-light), var(--wood-dark));
+    border: 3px solid var(--gold);
+    border-radius: 8px;
+    padding: 12px 20px;
+    text-align: center;
+    margin-bottom: 14px;
+    width: 100%;
+    max-width: 600px;
+    box-shadow: 0 4px 12px rgba(0,0,0,.4);
+  }
+  .question-prompt {
+    font-size: .65rem;
+    color: var(--gold);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+    font-style: italic;
+  }
+  .question-word {
+    font-size: clamp(1.4rem, 5vw, 2.2rem);
+    color: var(--cream);
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-shadow: 0 2px 4px rgba(0,0,0,.5);
+    line-height: 1.1;
+  }
+
+  /* The board itself */
+  .board-wrap {
+    position: relative;
+    width: 100%;
+    max-width: 540px;
+    aspect-ratio: 1 / 1;
+    margin-bottom: 10px;
+  }
+  #board-canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+    cursor: crosshair;
+    touch-action: none;
+  }
+
+  /* Wind/power overlay */
+  .meter-row {
+    display: flex;
+    gap: 12px;
+    width: 100%;
+    max-width: 540px;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 10px;
+  }
+  .wind-display, .power-meter-wrap {
+    flex: 1;
+    background: rgba(0,0,0,.5);
+    border: 2px solid var(--wood);
+    border-radius: 6px;
+    padding: 8px 12px;
+    text-align: center;
+    font-size: .65rem;
+    color: var(--cream);
+    letter-spacing: 1px;
+  }
+  .meter-label {
+    color: var(--muted);
+    font-size: .55rem;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 4px;
+  }
+  .wind-arrow {
+    display: inline-block;
+    font-size: 1.3rem;
+    color: var(--gold);
+    transition: transform .3s;
+    text-shadow: 0 0 8px var(--gold);
+  }
+  .power-meter-bar {
+    height: 14px;
+    background: var(--wood-dark);
+    border: 1px solid var(--wood);
+    border-radius: 99px;
+    overflow: hidden;
+    position: relative;
+  }
+  .power-meter-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--green), var(--gold), var(--red));
+    width: 0%;
+    transition: width .03s linear;
+  }
+  .power-sweet-spot {
+    position: absolute;
+    top: -2px; bottom: -2px;
+    width: 14%;
+    left: 60%;
+    border: 2px solid var(--cream);
+    border-radius: 99px;
+    box-shadow: 0 0 6px var(--cream);
+    pointer-events: none;
+  }
+
+  .controls-hint {
+    background: rgba(0,0,0,.5);
+    border: 1px solid var(--wood);
+    border-radius: 6px;
+    color: var(--gold);
+    font-size: .65rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    text-align: center;
+    padding: 8px;
+    width: 100%;
+    max-width: 540px;
+  }
+
+  .throw-btn-large {
+    background: linear-gradient(180deg, var(--red), var(--red-deep));
+    color: var(--cream);
+    border: 3px solid var(--gold);
+    padding: 14px;
+    font-family: inherit;
+    font-size: .9rem;
+    font-weight: 700;
+    letter-spacing: 3px;
+    cursor: pointer;
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(178,34,34,.5);
+    width: 100%;
+    max-width: 540px;
+    text-transform: uppercase;
+    font-style: italic;
+  }
+  .throw-btn-large:disabled {
+    opacity: .5;
+    cursor: not-allowed;
+  }
+
+  /* Translation popup */
+  .trans-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.85);
+    backdrop-filter: blur(8px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    z-index: 200;
+  }
+  .trans-overlay.active { display: flex; }
+
+  .trans-box {
+    background: var(--felt);
+    border: 4px solid var(--gold);
+    border-radius: 12px;
+    padding: 22px;
+    max-width: 420px;
+    width: 100%;
+    text-align: center;
+    box-shadow: 0 0 0 3px var(--wood-dark), 0 12px 40px rgba(0,0,0,.7);
+  }
+  .trans-box h3 {
+    color: var(--red);
+    letter-spacing: 2px;
+    margin-bottom: 8px;
+    font-size: 1rem;
+    text-transform: uppercase;
+    font-style: italic;
+  }
+  .trans-box p {
+    color: var(--cream);
+    margin-bottom: 4px;
+    font-size: .85rem;
+  }
+  .trans-second-chance {
+    color: var(--gold);
+    font-style: italic;
+    font-size: .8rem;
+    margin-bottom: 16px;
+  }
+  .trans-word {
+    font-size: 1.6rem;
+    color: var(--cream);
+    margin-bottom: 18px;
+    font-weight: 700;
+    letter-spacing: 1px;
+  }
+  .trans-choices {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .trans-choice {
+    background: var(--wood-dark);
+    color: var(--cream);
+    border: 2px solid var(--wood);
+    padding: 12px;
+    font-family: inherit;
+    font-size: .85rem;
+    cursor: pointer;
+    border-radius: 6px;
+    line-height: 1.3;
+    transition: all .15s;
+  }
+  .trans-choice:hover:not(:disabled) {
+    border-color: var(--gold);
+    background: var(--wood);
+  }
+  .trans-choice.correct {
+    background: var(--green);
+    border-color: var(--cream);
+    color: var(--cream);
+  }
+  .trans-choice.wrong {
+    background: var(--red-deep);
+    border-color: var(--cream);
+    animation: shake .35s;
+  }
+  .trans-choice:disabled { cursor: default; }
+  @keyframes shake {
+    0%,100% { transform: translateX(0); }
+    25%     { transform: translateX(-6px); }
+    75%     { transform: translateX(6px); }
+  }
+
+  /* Floating points */
+  .points-pop {
+    position: absolute;
+    font-weight: 900;
+    font-size: 1.8rem;
+    color: var(--gold);
+    text-shadow: 0 2px 0 var(--wood-dark), 0 0 14px var(--gold);
+    pointer-events: none;
+    z-index: 100;
+    animation: points-fly 1.2s ease-out forwards;
+    font-style: italic;
+  }
+  .points-pop.bad {
+    color: var(--red);
+    text-shadow: 0 2px 0 var(--wood-dark), 0 0 14px var(--red);
+  }
+  @keyframes points-fly {
+    0%   { transform: translate(-50%, -50%) scale(.5); opacity: 0; }
+    20%  { transform: translate(-50%, -70%) scale(1.4); opacity: 1; }
+    100% { transform: translate(-50%, -120%) scale(1); opacity: 0; }
+  }
+
+  /* Particle layer */
+  .fx-layer {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 50;
+  }
+  .particle {
+    position: absolute;
+    pointer-events: none;
+  }
+
+  /* ═══ END SCREEN ═══ */
+  #end-screen {
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    text-align: center;
+    overflow: auto;
+  }
+  .end-banner {
+    font-size: 2.4rem;
+    color: var(--gold);
+    text-shadow: 0 2px 0 var(--wood-dark), 0 0 30px var(--gold);
+    letter-spacing: 4px;
+    margin-bottom: 8px;
+    font-style: italic;
+  }
+  .end-banner.win { color: var(--gold-light); }
+  .end-stats {
+    background: var(--felt);
+    border: 3px solid var(--gold);
+    border-radius: 8px;
+    padding: 16px 22px;
+    margin: 18px 0;
+    width: 100%;
+    max-width: 420px;
+    box-shadow: 0 0 0 3px var(--wood-dark);
+  }
+  .end-stat-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(245,230,211,.15);
+    font-size: .9rem;
+  }
+  .end-stat-row:last-child { border-bottom: none; }
+  .end-stat-row .lbl { color: var(--muted); letter-spacing: 1px; font-size: .7rem; text-transform: uppercase; }
+  .end-stat-row .v { color: var(--gold); font-weight: 700; }
+  .end-stat-row .v.cream { color: var(--cream); }
+
+  .new-record {
+    color: var(--gold);
+    font-size: .9rem;
+    letter-spacing: 4px;
+    animation: pulse 1s infinite;
+    margin-top: 4px;
+    font-style: italic;
+  }
+  @keyframes pulse { 50% { opacity: .5; } }
+
+  .end-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+    max-width: 420px;
+  }
+  .ghost-btn {
+    background: transparent;
+    color: var(--muted);
+    border: 2px solid var(--muted);
+    padding: 12px;
+    font-family: inherit;
+    font-size: .8rem;
+    cursor: pointer;
+    border-radius: 6px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+  .ghost-btn:hover { color: var(--cream); border-color: var(--cream); }
+
+  /* Mistakes recap */
+  .mistakes-recap {
+    background: var(--felt);
+    border: 3px solid var(--wood);
+    border-radius: 8px;
+    overflow: hidden;
+    width: 100%;
+    max-width: 420px;
+    margin-bottom: 16px;
+  }
+  .mistakes-header {
+    padding: 10px 16px;
+    font-size: .75rem;
+    color: var(--gold);
+    border-bottom: 1px solid var(--wood);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    font-style: italic;
+    display: flex;
+    justify-content: space-between;
+  }
+  .mistakes-list {
+    max-height: 240px;
+    overflow-y: auto;
+  }
+  .mistake-item {
+    padding: 8px 16px;
+    border-bottom: 1px solid rgba(245,230,211,.05);
+    font-size: .8rem;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 10px;
+    align-items: center;
+    text-align: left;
+  }
+  .mistake-item:last-child { border-bottom: none; }
+  .mistake-item .arrow { color: var(--muted); }
+  .mistake-item .en { color: var(--gold); font-weight: 700; }
+
+  .spinner {
+    width: 36px;
+    height: 36px;
+    border: 3px solid var(--wood);
+    border-top-color: var(--gold);
+    border-radius: 50%;
+    animation: spin .7s linear infinite;
+    margin: 30px auto;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<div class="fx-layer" id="fx-layer"></div>
+
+<!-- ═══ TITLE ═══ -->
+<div class="screen active" id="title-screen">
+  <div class="title-board">🎯</div>
+  <div class="title-name">WORD DARTS</div>
+  <div class="title-tag">★ TOURNAMENT EDITION ★</div>
+
+  <div class="tournament-card">
+    <h3>House Rules</h3>
+    <div class="toggle-row">
+      <div>
+        <div class="label">Wind</div>
+        <div class="desc">Dart drifts in flight</div>
+      </div>
+      <div class="toggle on" id="toggle-wind"></div>
+    </div>
+    <div class="toggle-row">
+      <div>
+        <div class="label">Power Meter</div>
+        <div class="desc">Time your release</div>
+      </div>
+      <div class="toggle on" id="toggle-power"></div>
+    </div>
+
+    <h3>Throws Per Round</h3>
+    <div class="throws-grid" id="throws-grid">
+      <button class="throw-btn" data-throws="10">10</button>
+      <button class="throw-btn selected" data-throws="20">20</button>
+      <button class="throw-btn" data-throws="30">30</button>
+    </div>
+  </div>
+
+  <button class="play-btn" onclick="startGame()" style="max-width:420px">▶ Begin Round</button>
+  <a href="/" class="ghost-link">← back to main app</a>
+  <div class="high-score-line" id="high-score-display"></div>
+</div>
+
+<!-- ═══ LOADING ═══ -->
+<div class="screen" id="loading-screen" style="align-items:center;justify-content:center">
+  <div class="spinner"></div>
+  <p style="font-size:.75rem;color:var(--muted);letter-spacing:2px">LOADING WORDS...</p>
+</div>
+
+<!-- ═══ GAME ═══ -->
+<div class="screen" id="game-screen">
+  <div class="game-hud">
+    <div class="hud-stat">
+      <span class="lbl">Score</span>
+      <span class="v" id="stat-score">0</span>
+    </div>
+    <div class="hud-stat">
+      <span class="lbl">Throw</span>
+      <span class="v cream"><span id="stat-throw">1</span>/<span id="stat-throws-total">20</span></span>
+    </div>
+    <div class="hud-stat">
+      <span class="lbl">Bullseyes</span>
+      <span class="v" id="stat-bullseyes">0</span>
+    </div>
+    <button class="quit-btn" onclick="quitGame()">Quit</button>
+  </div>
+
+  <div class="question-banner">
+    <div class="question-prompt" id="q-prompt">Translate from Swedish</div>
+    <div class="question-word" id="q-word">—</div>
+  </div>
+
+  <div class="board-wrap">
+    <canvas id="board-canvas"></canvas>
+  </div>
+
+  <div class="meter-row" id="meter-row">
+    <div class="wind-display" id="wind-display">
+      <div class="meter-label">Wind</div>
+      <span class="wind-arrow" id="wind-arrow">→</span>
+      <span id="wind-strength">0</span> kph
+    </div>
+    <div class="power-meter-wrap" id="power-display">
+      <div class="meter-label">Power</div>
+      <div class="power-meter-bar">
+        <div class="power-meter-fill" id="power-fill"></div>
+        <div class="power-sweet-spot"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="controls-hint" id="controls-hint">
+    Drag on the board to aim · then press THROW
+  </div>
+
+  <button class="throw-btn-large" id="throw-btn" onclick="throwDart()">▶ THROW</button>
+</div>
+
+<!-- ═══ TRANSLATION POPUP (second chance) ═══ -->
+<div class="trans-overlay" id="trans-overlay">
+  <div class="trans-box">
+    <h3>Second Chance!</h3>
+    <p>You hit <strong id="hit-word">—</strong></p>
+    <p class="trans-second-chance">Pick the correct translation for half points</p>
+    <div class="trans-word" id="trans-word">—</div>
+    <div class="trans-choices" id="trans-choices"></div>
+  </div>
+</div>
+
+<!-- ═══ END SCREEN ═══ -->
+<div class="screen" id="end-screen">
+  <div class="end-banner" id="end-banner">FINAL SCORE</div>
+  <div id="new-record-line"></div>
+  <div class="end-stats">
+    <div class="end-stat-row"><span class="lbl">Total Score</span><span class="v" id="end-score">0</span></div>
+    <div class="end-stat-row"><span class="lbl">Bullseyes</span><span class="v cream" id="end-bullseyes">0</span></div>
+    <div class="end-stat-row"><span class="lbl">Direct Hits</span><span class="v cream" id="end-hits">0</span></div>
+    <div class="end-stat-row"><span class="lbl">Saved by Translation</span><span class="v cream" id="end-saves">0</span></div>
+    <div class="end-stat-row"><span class="lbl">Misses</span><span class="v cream" id="end-misses">0</span></div>
+    <div class="end-stat-row"><span class="lbl">Personal Best</span><span class="v" id="end-best">0</span></div>
+  </div>
+  <div id="mistakes-container"></div>
+  <div class="end-actions">
+    <button class="play-btn" onclick="startGame()">▶ Play Another Round</button>
+    <button class="ghost-btn" onclick="goToTitle()">⏎ Main Menu</button>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════════════════════════════════════════
+// CONFIG
+// ════════════════════════════════════════════════════════════════════════════
+const CONFIG = {
+  RING_COUNT: 5,
+  // Points per ring, from center (0) to outer (4)
+  RING_POINTS: [50, 40, 30, 20, 10],
+  WIND_MAX: 30,           // kph max
+  WIND_INFLUENCE: 0.4,    // how much wind shifts the dart (multiplier)
+  POWER_OSCILLATE_MS: 1500, // power meter cycles every 1.5s
+  SWEET_SPOT_MIN: 0.60,
+  SWEET_SPOT_MAX: 0.74,
+  WRONG_PENALTY: 50,
+};
+
+// ════════════════════════════════════════════════════════════════════════════
+// AUDIO
+// ════════════════════════════════════════════════════════════════════════════
+let audioCtx = null;
+function getAudioCtx() {
+  if (!audioCtx) {
+    try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+    catch { audioCtx = null; }
+  }
+  return audioCtx;
+}
+document.addEventListener('click', () => {
+  const ctx = getAudioCtx();
+  if (ctx && ctx.state === 'suspended') ctx.resume();
+});
+
+function playThunk() {
+  const ctx = getAudioCtx(); if (!ctx) return;
+  const t = ctx.currentTime;
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(180, t);
+  osc.frequency.exponentialRampToValueAtTime(60, t + 0.15);
+  gain.gain.setValueAtTime(0.4, t);
+  gain.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
+  osc.connect(gain).connect(ctx.destination);
+  osc.start(t); osc.stop(t + 0.2);
+}
+
+function playDing() {
+  const ctx = getAudioCtx(); if (!ctx) return;
+  const t = ctx.currentTime;
+  [880, 1320].forEach((f, i) => {
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.type = 'triangle';
+    o.frequency.setValueAtTime(f, t + i * 0.1);
+    g.gain.setValueAtTime(0.0001, t + i * 0.1);
+    g.gain.exponentialRampToValueAtTime(0.2, t + i * 0.1 + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + i * 0.1 + 0.3);
+    o.connect(g).connect(ctx.destination);
+    o.start(t + i * 0.1); o.stop(t + i * 0.1 + 0.32);
+  });
+}
+
+function playMiss() {
+  const ctx = getAudioCtx(); if (!ctx) return;
+  const t = ctx.currentTime;
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.type = 'sawtooth';
+  osc.frequency.setValueAtTime(150, t);
+  osc.frequency.exponentialRampToValueAtTime(50, t + 0.4);
+  gain.gain.setValueAtTime(0.2, t);
+  gain.gain.exponentialRampToValueAtTime(0.001, t + 0.4);
+  osc.connect(gain).connect(ctx.destination);
+  osc.start(t); osc.stop(t + 0.4);
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// STATE
+// ════════════════════════════════════════════════════════════════════════════
+const SAVE_KEY = 'svenska-darts-save-v1';
+let highScore = 0;
+let WORDS = [];
+
+const setup = {
+  wind: true,
+  power: true,
+  throwsTotal: 20,
+};
+
+const game = {
+  active: false,
+  score: 0,
+  throwIndex: 0,
+  bullseyes: 0,
+  directHits: 0,
+  saves: 0,           // saved by translation popup
+  misses: 0,
+  mistakes: [],
+
+  // current round
+  word: null,
+  rings: [],          // [{label, ringIndex (0=center)}]
+  correctRingIndex: 0,
+  wind: { dx: 0, strength: 0 },
+  aim: { x: 0, y: 0, locked: false },  // x,y in canvas coords
+  power: 0,           // 0..1
+  powerCharging: false,
+  powerLocked: false,
+  powerLockedAt: 0,
+  powerStartedAt: 0,
+
+  dartFlying: false,
+  dartLanding: null,  // { x, y, ringIndex }
+  dartEl: null,
+};
+
+// ════════════════════════════════════════════════════════════════════════════
+// HELPERS
+// ════════════════════════════════════════════════════════════════════════════
+const $ = id => document.getElementById(id);
+const shuffle = arr => arr.slice().sort(() => Math.random() - .5);
+const norm = s => s.toLowerCase().trim();
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  $(id).classList.add('active');
+}
+
+function loadHighScore() {
+  try {
+    const stored = localStorage.getItem(SAVE_KEY);
+    highScore = stored ? JSON.parse(stored).highScore || 0 : 0;
+  } catch { highScore = 0; }
+  $('high-score-display').innerHTML = highScore > 0 ? `🏆 Personal Best: <strong>${highScore}</strong>` : '';
+}
+loadHighScore();
+
+function saveHighScore(score) {
+  if (score > highScore) {
+    highScore = score;
+    localStorage.setItem(SAVE_KEY, JSON.stringify({ highScore }));
+    return true;
+  }
+  return false;
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  })[c]);
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// SETUP CARD
+// ════════════════════════════════════════════════════════════════════════════
+$('toggle-wind').onclick = () => {
+  setup.wind = !setup.wind;
+  $('toggle-wind').classList.toggle('on', setup.wind);
+};
+$('toggle-power').onclick = () => {
+  setup.power = !setup.power;
+  $('toggle-power').classList.toggle('on', setup.power);
+};
+document.querySelectorAll('#throws-grid .throw-btn').forEach(btn => {
+  btn.onclick = () => {
+    document.querySelectorAll('#throws-grid .throw-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    setup.throwsTotal = parseInt(btn.dataset.throws, 10);
+  };
+});
+
+// ════════════════════════════════════════════════════════════════════════════
+// LOAD WORDS
+// ════════════════════════════════════════════════════════════════════════════
+async function loadAllWords() {
+  showScreen('loading-screen');
+  try {
+    const info = await (await fetch('/api/info')).json();
+    const total = info.total_chapters;
+    const promises = [];
+    for (let i = 1; i <= total; i++) {
+      promises.push(fetch(`/api/words/${i}`).then(r => r.json()));
+    }
+    const results = await Promise.all(promises);
+    WORDS = results.flatMap(r => r.words);
+    return true;
+  } catch (e) {
+    alert('Failed to load words: ' + e.message);
+    showScreen('title-screen');
+    return false;
+  }
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// CANVAS SETUP
+// ════════════════════════════════════════════════════════════════════════════
+const canvas = $('board-canvas');
+const ctx = canvas.getContext('2d');
+
+function setupCanvas() {
+  const wrap = canvas.parentElement;
+  const size = wrap.clientWidth;
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = size * dpr;
+  canvas.height = size * dpr;
+  canvas.style.width = size + 'px';
+  canvas.style.height = size + 'px';
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+
+window.addEventListener('resize', () => {
+  if (game.active) {
+    setupCanvas();
+    drawBoard();
+  }
+});
+
+// ════════════════════════════════════════════════════════════════════════════
+// GAME FLOW
+// ════════════════════════════════════════════════════════════════════════════
+async function startGame() {
+  if (WORDS.length === 0) {
+    const ok = await loadAllWords();
+    if (!ok) return;
+  }
+  resetGame();
+  showScreen('game-screen');
+  setupCanvas();
+  game.active = true;
+  $('stat-throws-total').textContent = setup.throwsTotal;
+  showHideMeters();
+  newRound();
+}
+
+function resetGame() {
+  game.active = false;
+  game.score = 0;
+  game.throwIndex = 0;
+  game.bullseyes = 0;
+  game.directHits = 0;
+  game.saves = 0;
+  game.misses = 0;
+  game.mistakes = [];
+  game.dartFlying = false;
+  game.aim.locked = false;
+  game.powerLocked = false;
+  game.power = 0;
+
+  $('stat-score').textContent = 0;
+  $('stat-throw').textContent = 1;
+  $('stat-bullseyes').textContent = 0;
+}
+
+function showHideMeters() {
+  $('wind-display').style.display = setup.wind ? 'block' : 'none';
+  $('power-display').style.display = setup.power ? 'block' : 'none';
+  $('meter-row').style.display = (setup.wind || setup.power) ? 'flex' : 'none';
+}
+
+function quitGame() {
+  if (!confirm('Quit current round?')) return;
+  game.active = false;
+  resetGame();
+  showScreen('title-screen');
+  loadHighScore();
+}
+
+function goToTitle() {
+  showScreen('title-screen');
+  loadHighScore();
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// ROUND LOGIC
+// ════════════════════════════════════════════════════════════════════════════
+function newRound() {
+  if (game.throwIndex >= setup.throwsTotal) {
+    return endGame();
+  }
+  game.throwIndex++;
+  $('stat-throw').textContent = game.throwIndex;
+
+  // Pick a word + 4 distractors
+  const word = WORDS[Math.floor(Math.random() * WORDS.length)];
+  const others = shuffle(WORDS.filter(w => w !== word)).slice(0, 4).map(w => w.english);
+  const choices = shuffle([word.english, ...others]);
+
+  game.word = word;
+  game.rings = choices.map((label, i) => ({ label, ringIndex: i }));
+  game.correctRingIndex = choices.findIndex(c => norm(c) === norm(word.english));
+
+  // Wind: random direction (-1..1) and strength
+  if (setup.wind) {
+    game.wind = {
+      dx: (Math.random() * 2 - 1),
+      strength: Math.floor(Math.random() * CONFIG.WIND_MAX),
+    };
+  } else {
+    game.wind = { dx: 0, strength: 0 };
+  }
+
+  // Reset throw state
+  game.aim = { x: canvas.clientWidth / 2, y: canvas.clientHeight / 2, locked: false };
+  game.power = 0;
+  game.powerCharging = false;
+  game.powerLocked = false;
+  game.dartFlying = false;
+  game.dartLanding = null;
+
+  // Update UI
+  $('q-prompt').textContent = 'Translate from Swedish';
+  $('q-word').textContent = word.swedish;
+
+  if (setup.wind) {
+    $('wind-arrow').style.transform = `rotate(${game.wind.dx > 0 ? 0 : 180}deg)`;
+    $('wind-strength').textContent = Math.round(game.wind.strength);
+  }
+
+  $('throw-btn').disabled = false;
+  $('throw-btn').textContent = setup.power ? '▶ HOLD TO CHARGE' : '▶ THROW';
+  $('controls-hint').textContent = setup.power
+    ? 'Drag to aim · hold throw button to charge power'
+    : 'Drag to aim · press throw';
+
+  drawBoard();
+
+  if (setup.power) {
+    startPowerMeter();
+  } else {
+    game.power = 0.67;  // mid-range default
+  }
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// POWER METER
+// ════════════════════════════════════════════════════════════════════════════
+function startPowerMeter() {
+  game.powerStartedAt = performance.now();
+  requestAnimationFrame(updatePowerMeter);
+}
+function updatePowerMeter() {
+  if (!game.active || game.powerLocked || game.dartFlying) return;
+  // Pulse 0..1..0 over 1.5s
+  const t = ((performance.now() - game.powerStartedAt) % CONFIG.POWER_OSCILLATE_MS) / CONFIG.POWER_OSCILLATE_MS;
+  // Triangular wave: 0 → 1 → 0
+  game.power = t < 0.5 ? t * 2 : 2 - t * 2;
+  $('power-fill').style.width = (game.power * 100) + '%';
+  requestAnimationFrame(updatePowerMeter);
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// AIM CONTROLS — drag on the board
+// ════════════════════════════════════════════════════════════════════════════
+function getCanvasPos(e) {
+  const rect = canvas.getBoundingClientRect();
+  const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+  const y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
+  return { x, y };
+}
+
+let isDragging = false;
+function handleAimStart(e) {
+  if (!game.active || game.dartFlying) return;
+  e.preventDefault();
+  isDragging = true;
+  const pos = getCanvasPos(e);
+  game.aim.x = pos.x;
+  game.aim.y = pos.y;
+  drawBoard();
+}
+function handleAimMove(e) {
+  if (!isDragging || !game.active || game.dartFlying) return;
+  e.preventDefault();
+  const pos = getCanvasPos(e);
+  game.aim.x = pos.x;
+  game.aim.y = pos.y;
+  drawBoard();
+}
+function handleAimEnd() {
+  isDragging = false;
+}
+
+canvas.addEventListener('mousedown', handleAimStart);
+canvas.addEventListener('mousemove', handleAimMove);
+canvas.addEventListener('mouseup', handleAimEnd);
+canvas.addEventListener('mouseleave', handleAimEnd);
+canvas.addEventListener('touchstart', handleAimStart, { passive: false });
+canvas.addEventListener('touchmove', handleAimMove, { passive: false });
+canvas.addEventListener('touchend', handleAimEnd);
+
+// ════════════════════════════════════════════════════════════════════════════
+// DRAW BOARD
+// ════════════════════════════════════════════════════════════════════════════
+function drawBoard() {
+  const w = canvas.clientWidth;
+  const h = canvas.clientHeight;
+  const cx = w / 2;
+  const cy = h / 2;
+  const maxR = Math.min(w, h) * 0.46;
+
+  ctx.clearRect(0, 0, w, h);
+
+  // Wood frame
+  ctx.fillStyle = '#3d2817';
+  ctx.beginPath();
+  ctx.arc(cx, cy, maxR + 18, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Inner wood ring
+  ctx.fillStyle = '#6b4423';
+  ctx.beginPath();
+  ctx.arc(cx, cy, maxR + 8, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Black outer rim
+  ctx.fillStyle = '#1a1a1a';
+  ctx.beginPath();
+  ctx.arc(cx, cy, maxR + 4, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Draw 5 rings outside-in: outer ring is index 4, center is 0
+  // Each ring is annular, alternating cream/red colors for classic dartboard feel
+  const ringColors = ['#1a5c34', '#8b1010', '#1a5c34', '#8b1010', '#d4a850'];
+  // Center (index 0) is gold, then alternating red/green
+  const realColors = ['#d4a850', '#8b1010', '#1a5c34', '#8b1010', '#1a5c34'];
+
+  for (let i = CONFIG.RING_COUNT - 1; i >= 0; i--) {
+    const rOuter = maxR * ((i + 1) / CONFIG.RING_COUNT);
+    ctx.fillStyle = realColors[i];
+    ctx.beginPath();
+    ctx.arc(cx, cy, rOuter, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Subtle inner shadow ring
+    ctx.strokeStyle = 'rgba(0,0,0,.35)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(cx, cy, rOuter, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+
+  // Felt texture (radial gradient)
+  const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, maxR);
+  grad.addColorStop(0, 'rgba(255,255,255,.05)');
+  grad.addColorStop(1, 'rgba(0,0,0,.35)');
+  ctx.fillStyle = grad;
+  ctx.beginPath();
+  ctx.arc(cx, cy, maxR, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Word labels — placed on each ring
+  // Ring i sits between maxR*(i/5) and maxR*((i+1)/5)
+  // We place labels at the middle of the ring band
+  ctx.font = `${Math.floor(maxR * 0.06)}px Georgia, serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = '#fff';
+  ctx.shadowColor = 'rgba(0,0,0,.7)';
+  ctx.shadowBlur = 4;
+
+  for (let i = 0; i < CONFIG.RING_COUNT; i++) {
+    const ring = game.rings[i];
+    if (!ring) continue;
+    const rInner = maxR * (i / CONFIG.RING_COUNT);
+    const rOuter = maxR * ((i + 1) / CONFIG.RING_COUNT);
+    const rMid = (rInner + rOuter) / 2;
+
+    if (i === 0) {
+      // Center: just put the label in the middle
+      ctx.fillText(ring.label, cx, cy);
+    } else {
+      // Outer rings: place at top of the ring (12 o'clock position)
+      ctx.fillText(ring.label, cx, cy - rMid);
+      // And at bottom (6 o'clock)
+      ctx.fillText(ring.label, cx, cy + rMid);
+    }
+  }
+  ctx.shadowBlur = 0;
+
+  // Crosshair (aim indicator)
+  if (!game.dartFlying) {
+    drawCrosshair(game.aim.x, game.aim.y);
+  }
+
+  // Landed dart
+  if (game.dartLanding) {
+    drawLandedDart(game.dartLanding.x, game.dartLanding.y);
+  }
+}
+
+function drawCrosshair(x, y) {
+  ctx.strokeStyle = 'rgba(255,255,255,.85)';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.arc(x, y, 12, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(x - 18, y); ctx.lineTo(x - 6, y);
+  ctx.moveTo(x + 6, y); ctx.lineTo(x + 18, y);
+  ctx.moveTo(x, y - 18); ctx.lineTo(x, y - 6);
+  ctx.moveTo(x, y + 6); ctx.lineTo(x, y + 18);
+  ctx.stroke();
+  // Tiny center dot
+  ctx.fillStyle = 'rgba(255,255,255,.9)';
+  ctx.beginPath();
+  ctx.arc(x, y, 1.5, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+function drawLandedDart(x, y) {
+  // Dart body
+  ctx.save();
+  ctx.translate(x, y);
+  // Shadow on board
+  ctx.fillStyle = 'rgba(0,0,0,.4)';
+  ctx.beginPath();
+  ctx.ellipse(2, 2, 8, 3, 0, 0, Math.PI * 2);
+  ctx.fill();
+  // Tip
+  ctx.fillStyle = '#888';
+  ctx.beginPath();
+  ctx.arc(0, 0, 3, 0, Math.PI * 2);
+  ctx.fill();
+  // Shaft (stick going up-right)
+  ctx.strokeStyle = '#dd3333';
+  ctx.lineWidth = 4;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(0, 0);
+  ctx.lineTo(18, -22);
+  ctx.stroke();
+  // Flight
+  ctx.fillStyle = '#ffd23f';
+  ctx.beginPath();
+  ctx.moveTo(18, -22);
+  ctx.lineTo(28, -28);
+  ctx.lineTo(22, -34);
+  ctx.lineTo(14, -28);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// THROW DART
+// ════════════════════════════════════════════════════════════════════════════
+function throwDart() {
+  if (!game.active || game.dartFlying) return;
+  game.dartFlying = true;
+  game.powerLocked = true;
+  $('throw-btn').disabled = true;
+
+  // Determine landing position based on aim + wind + power accuracy
+  const w = canvas.clientWidth;
+  const h = canvas.clientHeight;
+  const cx = w / 2;
+  const cy = h / 2;
+  const maxR = Math.min(w, h) * 0.46;
+
+  let landX = game.aim.x;
+  let landY = game.aim.y;
+
+  // Wind drift (affects horizontal landing)
+  if (setup.wind) {
+    const windPush = (game.wind.dx * game.wind.strength / CONFIG.WIND_MAX) * maxR * CONFIG.WIND_INFLUENCE;
+    landX += windPush;
+  }
+
+  // Power affects scatter — perfect power = no scatter, off = high scatter
+  if (setup.power) {
+    const sweetCenter = (CONFIG.SWEET_SPOT_MIN + CONFIG.SWEET_SPOT_MAX) / 2;
+    const offFromSweet = Math.abs(game.power - sweetCenter);
+    // 0 if perfect, up to ~0.5 if extreme
+    const scatter = offFromSweet * maxR * 0.8;
+    const ang = Math.random() * Math.PI * 2;
+    landX += Math.cos(ang) * scatter;
+    landY += Math.sin(ang) * scatter;
+  }
+
+  // Animate dart flying
+  animateDartFlight(landX, landY, () => {
+    // Determine which ring (or miss)
+    const dist = Math.hypot(landX - cx, landY - cy);
+    let ringIndex = -1;
+    if (dist <= maxR) {
+      // Distance from center, scaled to ring index
+      ringIndex = Math.floor((dist / maxR) * CONFIG.RING_COUNT);
+      if (ringIndex >= CONFIG.RING_COUNT) ringIndex = CONFIG.RING_COUNT - 1;
+    }
+    game.dartLanding = { x: landX, y: landY, ringIndex };
+    drawBoard();
+    judgeThrow(ringIndex, landX, landY);
+  });
+}
+
+function animateDartFlight(targetX, targetY, onLand) {
+  const layer = $('fx-layer');
+  const dart = document.createElement('div');
+  dart.style.cssText = `
+    position: fixed;
+    width: 0; height: 0;
+    border-left: 8px solid transparent;
+    border-right: 8px solid transparent;
+    border-bottom: 30px solid #ffd23f;
+    pointer-events: none;
+    z-index: 100;
+    transform-origin: 50% 100%;
+  `;
+  layer.appendChild(dart);
+
+  const rect = canvas.getBoundingClientRect();
+  const startX = rect.left + rect.width / 2;
+  const startY = window.innerHeight + 50;
+  const endX = rect.left + targetX;
+  const endY = rect.top + targetY;
+
+  const dur = 600;
+  const t0 = performance.now();
+  function step(now) {
+    const t = Math.min((now - t0) / dur, 1);
+    const eased = 1 - Math.pow(1 - t, 2);
+    const x = startX + (endX - startX) * eased;
+    const y = startY + (endY - startY) * eased;
+    // Slight arc — dart flies up first then comes down
+    const arcY = -Math.sin(t * Math.PI) * 60;
+    const angle = Math.atan2(endY - startY, endX - startX) * 180 / Math.PI + 90;
+    const scale = 1 - t * 0.5;
+    dart.style.left = (x - 8) + 'px';
+    dart.style.top  = (y + arcY - 30) + 'px';
+    dart.style.transform = `rotate(${angle}deg) scale(${scale})`;
+    if (t < 1) requestAnimationFrame(step);
+    else {
+      dart.remove();
+      playThunk();
+      onLand();
+    }
+  }
+  requestAnimationFrame(step);
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// JUDGE THROW
+// ════════════════════════════════════════════════════════════════════════════
+function judgeThrow(ringIndex, landX, landY) {
+  if (ringIndex === -1) {
+    // Missed the board entirely
+    showFloatingPoints('MISS', landX, landY, 'bad');
+    playMiss();
+    game.misses++;
+    setTimeout(nextThrow, 1400);
+    return;
+  }
+
+  const correctRing = game.correctRingIndex;
+  const isCorrect = ringIndex === correctRing;
+
+  if (isCorrect) {
+    const pts = CONFIG.RING_POINTS[ringIndex];
+    game.score += pts;
+    game.directHits++;
+    if (ringIndex === 0) {
+      game.bullseyes++;
+      showFloatingPoints(`BULLSEYE! +${pts}`, landX, landY);
+    } else {
+      showFloatingPoints(`+${pts}`, landX, landY);
+    }
+    playDing();
+    burstOnBoard(landX, landY, '#d4a850', 24);
+    updateHUD();
+    setTimeout(nextThrow, 1400);
+  } else {
+    // Wrong ring — show second-chance popup
+    const hitWord = game.rings[ringIndex].label;
+    showFloatingPoints(`hit "${hitWord}"`, landX, landY, 'bad');
+    playMiss();
+    setTimeout(() => showSecondChance(hitWord, ringIndex), 800);
+  }
+}
+
+function showSecondChance(hitWord, ringHit) {
+  $('hit-word').textContent = hitWord;
+  $('trans-word').textContent = game.word.swedish;
+
+  // 4 choices: include the correct one, exclude what they already hit
+  const correct = game.word.english;
+  const distractors = shuffle(WORDS.filter(w => norm(w.english) !== norm(correct)).map(w => w.english))
+    .slice(0, 3);
+  const choices = shuffle([correct, ...distractors]);
+
+  const grid = $('trans-choices');
+  grid.innerHTML = '';
+  choices.forEach(choice => {
+    const btn = document.createElement('button');
+    btn.className = 'trans-choice';
+    btn.textContent = choice;
+    btn.onclick = () => {
+      grid.querySelectorAll('.trans-choice').forEach(b => {
+        b.disabled = true;
+        if (norm(b.textContent) === norm(correct)) b.classList.add('correct');
+      });
+      const won = norm(choice) === norm(correct);
+      if (!won) btn.classList.add('wrong');
+
+      setTimeout(() => {
+        $('trans-overlay').classList.remove('active');
+        if (won) {
+          // Half points (rounded), based on what ring they hit
+          const halfPts = Math.floor(CONFIG.RING_POINTS[ringHit] / 2);
+          game.score += halfPts;
+          game.saves++;
+          playDing();
+          showFloatingPoints(`+${halfPts} (saved!)`,
+            canvas.getBoundingClientRect().width / 2,
+            canvas.getBoundingClientRect().height / 2);
+        } else {
+          // Full penalty + record mistake
+          game.score = Math.max(0, game.score - CONFIG.WRONG_PENALTY);
+          game.mistakes.push({
+            swedish: game.word.swedish,
+            english: game.word.english,
+            given: choice,
+          });
+          showFloatingPoints(`-${CONFIG.WRONG_PENALTY}`,
+            canvas.getBoundingClientRect().width / 2,
+            canvas.getBoundingClientRect().height / 2,
+            'bad');
+        }
+        updateHUD();
+        setTimeout(nextThrow, 1300);
+      }, won ? 500 : 900);
+    };
+    grid.appendChild(btn);
+  });
+
+  $('trans-overlay').classList.add('active');
+}
+
+function nextThrow() {
+  newRound();
+}
+
+function updateHUD() {
+  $('stat-score').textContent = game.score;
+  $('stat-bullseyes').textContent = game.bullseyes;
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// END
+// ════════════════════════════════════════════════════════════════════════════
+function endGame() {
+  game.active = false;
+  const isNewRecord = saveHighScore(game.score);
+
+  showScreen('end-screen');
+  $('end-banner').textContent = 'FINAL SCORE';
+  $('end-banner').classList.toggle('win', isNewRecord);
+  $('end-score').textContent = game.score;
+  $('end-bullseyes').textContent = game.bullseyes;
+  $('end-hits').textContent = game.directHits;
+  $('end-saves').textContent = game.saves;
+  $('end-misses').textContent = game.misses;
+  $('end-best').textContent = highScore;
+  $('new-record-line').innerHTML = isNewRecord ? '<div class="new-record">★ NEW PERSONAL BEST ★</div>' : '';
+
+  renderMistakes();
+  if (isNewRecord) confettiBurst(120);
+}
+
+function renderMistakes() {
+  const container = $('mistakes-container');
+  if (game.mistakes.length === 0) {
+    container.innerHTML = '';
+    return;
+  }
+  const items = game.mistakes.map(m => `
+    <div class="mistake-item">
+      <div>${escapeHtml(m.swedish)}</div>
+      <div class="arrow">→</div>
+      <div><span class="en">${escapeHtml(m.english)}</span></div>
+    </div>
+  `).join('');
+  container.innerHTML = `
+    <div class="mistakes-recap">
+      <div class="mistakes-header">
+        <span>Words to Review</span>
+        <span>${game.mistakes.length}</span>
+      </div>
+      <div class="mistakes-list">${items}</div>
+    </div>
+  `;
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// EFFECTS
+// ════════════════════════════════════════════════════════════════════════════
+const COLORS = ['#d4a850', '#b22222', '#1a5c34', '#f5e6d3'];
+
+function showFloatingPoints(text, x, y, kind = 'good') {
+  const rect = canvas.getBoundingClientRect();
+  const el = document.createElement('div');
+  el.className = 'points-pop' + (kind === 'bad' ? ' bad' : '');
+  el.textContent = text;
+  el.style.left = (rect.left + x) + 'px';
+  el.style.top  = (rect.top + y) + 'px';
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 1200);
+}
+
+function burstOnBoard(x, y, color, count = 16) {
+  const rect = canvas.getBoundingClientRect();
+  const cx = rect.left + x;
+  const cy = rect.top + y;
+  const layer = $('fx-layer');
+  for (let i = 0; i < count; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    p.style.background = color;
+    p.style.boxShadow = `0 0 6px ${color}`;
+    p.style.width = '5px';
+    p.style.height = '5px';
+    p.style.borderRadius = '50%';
+    p.style.left = cx + 'px';
+    p.style.top = cy + 'px';
+    layer.appendChild(p);
+    const angle = Math.random() * Math.PI * 2;
+    const dist = 30 + Math.random() * 60;
+    const dur = 500 + Math.random() * 300;
+    p.animate(
+      [
+        { transform: 'translate(-50%,-50%) scale(1)', opacity: 1 },
+        { transform: `translate(${Math.cos(angle)*dist - 2}px, ${Math.sin(angle)*dist - 2}px) scale(0)`, opacity: 0 },
+      ],
+      { duration: dur, easing: 'ease-out', fill: 'forwards' }
+    ).onfinish = () => p.remove();
+  }
+}
+
+function confettiBurst(count) {
+  const layer = $('fx-layer');
+  const W = window.innerWidth;
+  for (let i = 0; i < count; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    const color = COLORS[Math.floor(Math.random() * COLORS.length)];
+    p.style.background = color;
+    p.style.width = '10px';
+    p.style.height = '14px';
+    p.style.left = Math.random() * W + 'px';
+    p.style.top = '-20px';
+    layer.appendChild(p);
+    const drift = (Math.random() - .5) * 200;
+    const dur = 1500 + Math.random() * 1500;
+    const rot = Math.random() * 720 - 360;
+    p.animate(
+      [
+        { transform: 'translate(0,0) rotate(0deg)', opacity: 1 },
+        { transform: `translate(${drift}px, ${window.innerHeight + 40}px) rotate(${rot}deg)`, opacity: .8 },
+      ],
+      { duration: dur, easing: 'cubic-bezier(.2,.6,.4,1)', fill: 'forwards' }
+    ).onfinish = () => p.remove();
+  }
+}
+</script>
+</body>
+</html>
