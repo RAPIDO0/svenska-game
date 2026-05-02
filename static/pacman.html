@@ -1,0 +1,1566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Word Pac-Man — Svenska</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:        #000010;
+    --maze-wall: #1e3a8a;
+    --maze-glow: #3b82f6;
+    --pacman:    #ffd23f;
+    --pellet:    #ffaa44;
+    --power:     #ff5577;
+    --ghost-1:   #ff3366;   /* Blinky red */
+    --ghost-2:   #ff89e0;   /* Pinky pink */
+    --ghost-3:   #00f0ff;   /* Inky cyan */
+    --ghost-4:   #ff9933;   /* Clyde orange */
+    --ghost-scared: #2233ff;
+    --text:      #fff;
+    --muted:     #6677aa;
+  }
+
+  html, body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Press Start 2P', 'Courier New', monospace;
+    min-height: 100vh;
+    overflow: hidden;
+    user-select: none;
+    touch-action: none;
+  }
+
+  @font-face {
+    font-family: 'Press Start 2P';
+    src: url('https://cdn.jsdelivr.net/gh/google/fonts/ofl/pressstart2p/PressStart2P-Regular.ttf') format('truetype');
+  }
+
+  .screen { display: none; min-height: 100vh; position: relative; }
+  .screen.active { display: flex; flex-direction: column; }
+
+  /* ═══ TITLE ═══ */
+  #title-screen {
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 24px;
+    overflow: auto;
+  }
+
+  .title-logo {
+    font-size: clamp(1.8rem, 6vw, 3rem);
+    color: var(--pacman);
+    text-shadow:
+      4px 4px 0 var(--maze-wall),
+      0 0 20px var(--pacman);
+    margin-bottom: 6px;
+    line-height: 1.4;
+    letter-spacing: -1px;
+  }
+
+  .title-tag {
+    font-size: .55rem;
+    color: var(--ghost-3);
+    letter-spacing: 4px;
+    margin-bottom: 30px;
+    text-shadow: 0 0 8px var(--ghost-3);
+  }
+
+  .title-pacman {
+    font-size: 3.5rem;
+    margin-bottom: 12px;
+    animation: chomp 0.4s steps(2) infinite;
+  }
+  @keyframes chomp {
+    0%,100% { transform: rotate(0deg); }
+    50%     { transform: rotate(-15deg); }
+  }
+
+  .title-ghosts {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 24px;
+    font-size: 1.6rem;
+  }
+  .title-ghosts span {
+    animation: ghost-bob 1.2s ease-in-out infinite;
+  }
+  .title-ghosts span:nth-child(2) { animation-delay: .15s; }
+  .title-ghosts span:nth-child(3) { animation-delay: .30s; }
+  .title-ghosts span:nth-child(4) { animation-delay: .45s; }
+  @keyframes ghost-bob {
+    0%,100% { transform: translateY(0); }
+    50%     { transform: translateY(-8px); }
+  }
+
+  .arcade-card {
+    background: rgba(30, 58, 138, .15);
+    backdrop-filter: blur(10px);
+    border: 2px solid var(--maze-wall);
+    border-radius: 8px;
+    padding: 24px;
+    max-width: 400px;
+    width: 100%;
+    box-shadow:
+      0 0 30px rgba(59, 130, 246, .3),
+      inset 0 0 20px rgba(59, 130, 246, .05);
+    margin-bottom: 14px;
+  }
+  .arcade-card h3 {
+    font-size: .55rem;
+    color: var(--pacman);
+    letter-spacing: 2px;
+    margin-bottom: 12px;
+    text-align: center;
+  }
+  .arcade-card p {
+    font-size: .55rem;
+    line-height: 2;
+    color: var(--text);
+    text-align: center;
+    margin-bottom: 12px;
+  }
+  .arcade-card .legend {
+    font-size: .5rem;
+    color: var(--muted);
+    line-height: 1.8;
+    text-align: left;
+  }
+  .arcade-card .legend span { color: var(--pellet); }
+
+  .arcade-btn {
+    background: var(--pacman);
+    color: var(--bg);
+    border: 2px solid #fff;
+    padding: 14px 24px;
+    font-family: inherit;
+    font-size: .7rem;
+    letter-spacing: 2px;
+    cursor: pointer;
+    width: 100%;
+    box-shadow: 0 0 20px var(--pacman);
+    transition: all .1s;
+    text-transform: uppercase;
+  }
+  .arcade-btn:hover {
+    background: #fff;
+    box-shadow: 0 0 30px #fff;
+  }
+  .arcade-btn:active { transform: translateY(2px); }
+
+  .arcade-btn.ghost {
+    background: transparent;
+    color: var(--muted);
+    border-color: var(--muted);
+    box-shadow: none;
+  }
+  .arcade-btn.ghost:hover {
+    color: #fff;
+    border-color: #fff;
+  }
+
+  .high-score-line {
+    font-size: .55rem;
+    color: var(--pacman);
+    text-shadow: 0 0 8px var(--pacman);
+    margin-top: 14px;
+    letter-spacing: 1px;
+  }
+
+  /* ═══ GAME ═══ */
+  #game-screen {
+    align-items: center;
+    padding: 8px;
+  }
+
+  .game-hud {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    max-width: 560px;
+    margin-bottom: 8px;
+    font-size: .55rem;
+    color: var(--text);
+  }
+  .hud-stat {
+    background: rgba(30, 58, 138, .3);
+    border: 1px solid var(--maze-wall);
+    padding: 6px 10px;
+    border-radius: 4px;
+    text-align: center;
+  }
+  .hud-stat .lbl {
+    display: block;
+    color: var(--muted);
+    font-size: .45rem;
+    letter-spacing: 1px;
+  }
+  .hud-stat .v {
+    color: var(--pacman);
+    font-size: .75rem;
+  }
+  .hud-stat .v.cyan { color: var(--ghost-3); }
+  .hud-stat .v.pink { color: var(--ghost-2); }
+
+  .quit-btn {
+    background: transparent;
+    color: var(--muted);
+    border: 1px solid var(--muted);
+    padding: 6px 10px;
+    font-family: inherit;
+    font-size: .5rem;
+    letter-spacing: 1px;
+    cursor: pointer;
+    border-radius: 4px;
+  }
+  .quit-btn:hover { color: var(--ghost-1); border-color: var(--ghost-1); }
+
+  /* The maze canvas */
+  .maze-wrap {
+    position: relative;
+    width: 100%;
+    max-width: 560px;
+    aspect-ratio: 14 / 16;
+    background: var(--bg);
+    border: 2px solid var(--maze-wall);
+    border-radius: 6px;
+    box-shadow: 0 0 30px rgba(59, 130, 246, .3);
+    overflow: hidden;
+  }
+  #maze-canvas {
+    width: 100%;
+    height: 100%;
+    image-rendering: pixelated;
+    display: block;
+  }
+
+  /* Translation modal */
+  .translation-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 16, .85);
+    backdrop-filter: blur(8px);
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    z-index: 20;
+  }
+  .translation-overlay.active { display: flex; }
+
+  .trans-card {
+    background: rgba(30, 58, 138, .2);
+    border: 2px solid var(--pacman);
+    border-radius: 8px;
+    padding: 18px;
+    max-width: 360px;
+    width: 100%;
+    box-shadow: 0 0 30px var(--pacman);
+    text-align: center;
+  }
+  .trans-prompt {
+    font-size: .5rem;
+    color: var(--muted);
+    letter-spacing: 2px;
+    margin-bottom: 8px;
+  }
+  .trans-word {
+    font-size: 1.3rem;
+    color: var(--pacman);
+    text-shadow: 0 0 15px var(--pacman);
+    margin-bottom: 14px;
+    letter-spacing: 1px;
+  }
+  .trans-choices {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .trans-choice {
+    background: var(--maze-wall);
+    color: var(--text);
+    border: 2px solid var(--maze-glow);
+    padding: 10px 8px;
+    font-family: inherit;
+    font-size: .55rem;
+    cursor: pointer;
+    border-radius: 4px;
+    line-height: 1.3;
+    transition: all .12s;
+  }
+  .trans-choice:hover:not(:disabled) {
+    background: var(--maze-glow);
+    box-shadow: 0 0 14px var(--maze-glow);
+  }
+  .trans-choice.correct {
+    background: var(--pellet);
+    color: var(--bg);
+    border-color: #fff;
+    box-shadow: 0 0 20px var(--pellet);
+  }
+  .trans-choice.wrong {
+    background: var(--ghost-1);
+    border-color: #fff;
+    animation: shake .35s;
+  }
+  .trans-choice:disabled { cursor: default; }
+  @keyframes shake {
+    0%,100% { transform: translateX(0); }
+    25%     { transform: translateX(-6px); }
+    75%     { transform: translateX(6px); }
+  }
+
+  /* Mobile touch controls */
+  .touch-pad {
+    display: none;
+    margin-top: 10px;
+    width: 100%;
+    max-width: 240px;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 6px;
+    user-select: none;
+  }
+  @media (max-width: 768px), (pointer: coarse) {
+    .touch-pad { display: grid; }
+  }
+  .pad-btn {
+    background: rgba(30, 58, 138, .3);
+    border: 2px solid var(--maze-wall);
+    color: var(--pacman);
+    font-family: inherit;
+    font-size: 1.2rem;
+    padding: 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .pad-btn:active {
+    background: var(--maze-glow);
+    box-shadow: 0 0 12px var(--maze-glow);
+  }
+  .pad-empty { visibility: hidden; }
+
+  /* Combo banner */
+  .combo-text {
+    position: fixed;
+    top: 25%;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 2rem;
+    pointer-events: none;
+    opacity: 0;
+    z-index: 100;
+    color: var(--pacman);
+    text-shadow: 4px 4px 0 var(--bg), 0 0 30px currentColor;
+    letter-spacing: -1px;
+  }
+  .combo-text.show { animation: combo-fly 1s ease-out; }
+  @keyframes combo-fly {
+    0%   { opacity: 0; transform: translate(-50%, 30px) scale(.5); }
+    25%  { opacity: 1; transform: translate(-50%, 0) scale(1.3); }
+    75%  { opacity: 1; transform: translate(-50%, -20px) scale(1); }
+    100% { opacity: 0; transform: translate(-50%, -60px) scale(.9); }
+  }
+
+  /* Particle layer */
+  .fx-layer {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 50;
+  }
+  .particle {
+    position: absolute;
+    pointer-events: none;
+  }
+
+  /* ═══ GAME OVER ═══ */
+  #end-screen {
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    text-align: center;
+    overflow: auto;
+  }
+
+  .end-banner {
+    font-size: 2.2rem;
+    color: var(--ghost-1);
+    text-shadow: 4px 4px 0 var(--bg), 0 0 30px var(--ghost-1);
+    letter-spacing: -1px;
+    margin-bottom: 8px;
+  }
+  .end-banner.win {
+    color: var(--pacman);
+    text-shadow: 4px 4px 0 var(--bg), 0 0 30px var(--pacman);
+  }
+
+  .end-stats {
+    background: rgba(30, 58, 138, .15);
+    border: 2px solid var(--maze-wall);
+    border-radius: 6px;
+    padding: 14px 18px;
+    margin: 16px 0;
+    width: 100%;
+    max-width: 400px;
+    font-size: .6rem;
+  }
+  .end-stat-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 7px 0;
+    border-bottom: 1px solid var(--maze-wall);
+  }
+  .end-stat-row:last-child { border-bottom: none; }
+  .end-stat-row .lbl {
+    color: var(--muted);
+    font-size: .5rem;
+    letter-spacing: 1px;
+  }
+  .end-stat-row .v.gold { color: var(--pacman); }
+  .end-stat-row .v.cyan { color: var(--ghost-3); }
+  .end-stat-row .v.pink { color: var(--ghost-2); }
+
+  .new-record {
+    color: var(--pacman);
+    font-size: .65rem;
+    letter-spacing: 3px;
+    animation: pulse 1s infinite;
+    margin-top: 4px;
+  }
+  @keyframes pulse { 50% { opacity: .4; } }
+
+  .end-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+    max-width: 400px;
+  }
+
+  /* Mistakes recap */
+  .mistakes-recap {
+    background: rgba(30, 58, 138, .15);
+    border: 2px solid var(--maze-wall);
+    border-radius: 6px;
+    overflow: hidden;
+    width: 100%;
+    max-width: 400px;
+    margin-bottom: 14px;
+  }
+  .mistakes-header {
+    padding: 10px 14px;
+    font-size: .55rem;
+    color: var(--ghost-2);
+    text-shadow: 0 0 8px var(--ghost-2);
+    border-bottom: 1px solid var(--maze-wall);
+    letter-spacing: 2px;
+    display: flex;
+    justify-content: space-between;
+  }
+  .mistakes-list {
+    max-height: 220px;
+    overflow-y: auto;
+  }
+  .mistake-item {
+    padding: 8px 14px;
+    border-bottom: 1px solid var(--maze-wall);
+    font-size: .55rem;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 10px;
+    align-items: center;
+    text-align: left;
+    line-height: 1.5;
+  }
+  .mistake-item .arrow { color: var(--muted); }
+  .mistake-item .en { color: var(--pellet); }
+
+  /* Loading */
+  .spinner {
+    width: 36px;
+    height: 36px;
+    border: 3px solid var(--maze-wall);
+    border-top-color: var(--pacman);
+    border-radius: 50%;
+    animation: spin .7s linear infinite;
+    margin: 30px auto;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<div class="fx-layer" id="fx-layer"></div>
+<div class="combo-text" id="combo-text"></div>
+
+<!-- ═══ TITLE ═══ -->
+<div class="screen active" id="title-screen">
+  <div class="title-pacman">😮</div>
+  <div class="title-logo">WORD<br>PAC-MAN</div>
+  <div class="title-tag">★ SVENSKA EDITION ★</div>
+
+  <div class="title-ghosts">
+    <span style="color:var(--ghost-1)">👻</span>
+    <span style="color:var(--ghost-2)">👻</span>
+    <span style="color:var(--ghost-3)">👻</span>
+    <span style="color:var(--ghost-4)">👻</span>
+  </div>
+
+  <div class="arcade-card">
+    <h3>How to play</h3>
+    <p style="font-size:.5rem">
+      Eat all the word pellets!<br>
+      But each one asks for a translation.<br>
+      Wrong answer = ghosts speed up!<br>
+      Get caught = game over.
+    </p>
+    <div class="legend">
+      <span>•</span> 10 PTS · WORD PELLET<br>
+      <span style="color:var(--power)">●</span> POWER PELLET — EAT GHOSTS<br>
+      👻 200 PTS · GHOST (WHEN BLUE)
+    </div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:10px;width:100%;max-width:400px">
+    <button class="arcade-btn" onclick="startGame()">▶ INSERT COIN</button>
+    <a href="/" class="arcade-btn ghost" style="text-decoration:none;text-align:center">⏎ MAIN APP</a>
+  </div>
+
+  <div class="high-score-line" id="high-score-display"></div>
+</div>
+
+<!-- ═══ LOADING ═══ -->
+<div class="screen" id="loading-screen" style="align-items:center;justify-content:center">
+  <div class="spinner"></div>
+  <p style="font-size:.55rem;color:var(--muted);letter-spacing:2px">LOADING WORDS...</p>
+</div>
+
+<!-- ═══ GAME ═══ -->
+<div class="screen" id="game-screen">
+  <div class="game-hud">
+    <div class="hud-stat">
+      <span class="lbl">SCORE</span>
+      <span class="v" id="stat-score">0</span>
+    </div>
+    <div class="hud-stat">
+      <span class="lbl">LIVES</span>
+      <span class="v pink" id="stat-lives">❤❤❤</span>
+    </div>
+    <div class="hud-stat">
+      <span class="lbl">PELLETS</span>
+      <span class="v cyan"><span id="stat-pellets">0</span>/<span id="stat-pellets-total">0</span></span>
+    </div>
+    <button class="quit-btn" onclick="quitGame()">QUIT</button>
+  </div>
+
+  <div class="maze-wrap">
+    <canvas id="maze-canvas"></canvas>
+
+    <!-- Translation modal overlays the maze -->
+    <div class="translation-overlay" id="trans-overlay">
+      <div class="trans-card">
+        <div class="trans-prompt" id="trans-prompt">SWEDISH → ENGLISH</div>
+        <div class="trans-word" id="trans-word">—</div>
+        <div class="trans-choices" id="trans-choices"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="touch-pad">
+    <div class="pad-empty"></div>
+    <button class="pad-btn" data-dir="up">▲</button>
+    <div class="pad-empty"></div>
+    <button class="pad-btn" data-dir="left">◀</button>
+    <div class="pad-empty"></div>
+    <button class="pad-btn" data-dir="right">▶</button>
+    <div class="pad-empty"></div>
+    <button class="pad-btn" data-dir="down">▼</button>
+    <div class="pad-empty"></div>
+  </div>
+</div>
+
+<!-- ═══ GAME OVER ═══ -->
+<div class="screen" id="end-screen">
+  <div class="end-banner" id="end-banner">GAME OVER</div>
+  <div id="new-record-line"></div>
+  <div class="end-stats">
+    <div class="end-stat-row"><span class="lbl">FINAL SCORE</span><span class="v gold" id="end-score">0</span></div>
+    <div class="end-stat-row"><span class="lbl">PELLETS EATEN</span><span class="v cyan" id="end-pellets">0</span></div>
+    <div class="end-stat-row"><span class="lbl">GHOSTS EATEN</span><span class="v pink" id="end-ghosts">0</span></div>
+    <div class="end-stat-row"><span class="lbl">BEST EVER</span><span class="v gold" id="end-best">0</span></div>
+  </div>
+  <div id="mistakes-container"></div>
+  <div class="end-actions">
+    <button class="arcade-btn" onclick="startGame()">▶ PLAY AGAIN</button>
+    <button class="arcade-btn ghost" onclick="goToTitle()">⏎ MAIN MENU</button>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════════════════════════════════════════
+// MAZE LAYOUT
+// ════════════════════════════════════════════════════════════════════════════
+//   # = wall        . = pellet        o = power pellet
+//     = empty       G = ghost spawn   P = player spawn
+//   T = tunnel (teleport edges)
+const MAZE = [
+  '##############',
+  '#............#',
+  '#.####.####..#',
+  '#o#  #.#  #.o#',
+  '#.####.####..#',
+  '#............#',
+  '#.##.####.##.#',
+  '#.##.#GG#.##.#',
+  'T.....#GG#...T',
+  '#.##.######.##',
+  '#............#',
+  '#.####.####..#',
+  '#o..P......o.#',
+  '###.######.###',
+  '#............#',
+  '##############',
+];
+const ROWS = MAZE.length;
+const COLS = MAZE[0].length;
+
+// ════════════════════════════════════════════════════════════════════════════
+// CONFIG
+// ════════════════════════════════════════════════════════════════════════════
+const CONFIG = {
+  CELL_SIZE: 32,             // pixels per maze cell on the canvas
+  PLAYER_SPEED: 0.12,        // cells per frame (60fps)
+  GHOST_BASE_SPEED: 0.085,
+  GHOST_SCARED_SPEED: 0.05,
+  POWER_DURATION_MS: 7000,
+  STARTING_LIVES: 3,
+};
+
+// ════════════════════════════════════════════════════════════════════════════
+// STATE
+// ════════════════════════════════════════════════════════════════════════════
+const SAVE_KEY = 'svenska-pacman-save-v1';
+let highScore = 0;
+let WORDS = [];
+
+const game = {
+  active: false,
+  paused: false,
+  cells: [],          // 2D array of cell types: 'wall', 'empty', 'pellet', 'power'
+  pelletsRemaining: 0,
+  pelletsTotal: 0,
+  pelletsEaten: 0,
+  ghostsEaten: 0,
+  score: 0,
+  lives: CONFIG.STARTING_LIVES,
+  level: 1,
+  ghostSpeedBoost: 1.0,    // grows on wrong answers
+  mistakes: [],
+
+  player: null,
+  ghosts: [],
+  pelletWords: new Map(),  // "row,col" → {swedish, english}
+
+  powerActive: false,
+  powerEndTime: 0,
+
+  rafId: null,
+  lastFrame: 0,
+
+  pendingPellet: null,     // {row,col,word,callback} while modal is open
+};
+
+// ════════════════════════════════════════════════════════════════════════════
+// HELPERS
+// ════════════════════════════════════════════════════════════════════════════
+const $ = id => document.getElementById(id);
+const shuffle = arr => arr.slice().sort(() => Math.random() - .5);
+const norm = s => s.toLowerCase().trim();
+const cellKey = (r, c) => `${r},${c}`;
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  $(id).classList.add('active');
+}
+
+function loadHighScore() {
+  try {
+    const stored = localStorage.getItem(SAVE_KEY);
+    highScore = stored ? JSON.parse(stored).highScore || 0 : 0;
+  } catch { highScore = 0; }
+  $('high-score-display').innerHTML = highScore > 0
+    ? `🏆 BEST: ${highScore}` : '';
+}
+loadHighScore();
+
+function saveHighScore(score) {
+  if (score > highScore) {
+    highScore = score;
+    localStorage.setItem(SAVE_KEY, JSON.stringify({ highScore }));
+    return true;
+  }
+  return false;
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({
+    '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+  })[c]);
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// LOAD WORDS
+// ════════════════════════════════════════════════════════════════════════════
+async function loadAllWords() {
+  showScreen('loading-screen');
+  try {
+    const info = await (await fetch('/api/info')).json();
+    const total = info.total_chapters;
+    const promises = [];
+    for (let i = 1; i <= total; i++) {
+      promises.push(fetch(`/api/words/${i}`).then(r => r.json()));
+    }
+    const results = await Promise.all(promises);
+    WORDS = results.flatMap(r => r.words);
+    return true;
+  } catch (e) {
+    alert('Failed to load words: ' + e.message);
+    showScreen('title-screen');
+    return false;
+  }
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// GAME INIT
+// ════════════════════════════════════════════════════════════════════════════
+async function startGame() {
+  if (WORDS.length === 0) {
+    const ok = await loadAllWords();
+    if (!ok) return;
+  }
+  resetGame();
+  showScreen('game-screen');
+  setupCanvas();
+  parseMaze();
+  spawnEntities();
+  game.active = true;
+  game.lastFrame = performance.now();
+  loop();
+}
+
+function resetGame() {
+  if (game.rafId) cancelAnimationFrame(game.rafId);
+  game.rafId = null;
+  game.active = false;
+  game.paused = false;
+  game.score = 0;
+  game.lives = CONFIG.STARTING_LIVES;
+  game.level = 1;
+  game.pelletsEaten = 0;
+  game.ghostsEaten = 0;
+  game.ghostSpeedBoost = 1.0;
+  game.mistakes = [];
+  game.pelletWords = new Map();
+  game.powerActive = false;
+  game.pendingPellet = null;
+  $('trans-overlay').classList.remove('active');
+}
+
+function setupCanvas() {
+  const canvas = $('maze-canvas');
+  // Render at native pixel size for crispness
+  canvas.width  = COLS * CONFIG.CELL_SIZE;
+  canvas.height = ROWS * CONFIG.CELL_SIZE;
+}
+
+function parseMaze() {
+  game.cells = [];
+  let pelletCount = 0;
+  for (let r = 0; r < ROWS; r++) {
+    const row = [];
+    for (let c = 0; c < COLS; c++) {
+      const ch = MAZE[r][c];
+      let cell = { type: 'empty' };
+      if (ch === '#') cell.type = 'wall';
+      else if (ch === '.') { cell.type = 'pellet'; pelletCount++; }
+      else if (ch === 'o') { cell.type = 'power'; }
+      else if (ch === 'T') { cell.type = 'tunnel'; }
+      row.push(cell);
+    }
+    game.cells.push(row);
+  }
+  game.pelletsTotal = pelletCount;
+  game.pelletsRemaining = pelletCount;
+
+  // Assign random words to all pellets (and power pellets)
+  const allPellets = [];
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      const t = game.cells[r][c].type;
+      if (t === 'pellet' || t === 'power') {
+        allPellets.push([r, c]);
+      }
+    }
+  }
+  const shuffled = shuffle(WORDS);
+  allPellets.forEach(([r, c], i) => {
+    game.pelletWords.set(cellKey(r, c), shuffled[i % shuffled.length]);
+  });
+
+  $('stat-pellets-total').textContent = game.pelletsTotal;
+  $('stat-pellets').textContent = 0;
+  updateHUD();
+}
+
+function spawnEntities() {
+  // Find P and G spawn points
+  let playerSpawn = null;
+  const ghostSpawns = [];
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      if (MAZE[r][c] === 'P') playerSpawn = { r, c };
+      if (MAZE[r][c] === 'G') ghostSpawns.push({ r, c });
+    }
+  }
+  if (!playerSpawn) playerSpawn = { r: ROWS - 3, c: 4 };
+
+  // Player
+  game.player = {
+    r: playerSpawn.r + 0.0,
+    c: playerSpawn.c + 0.0,
+    targetR: playerSpawn.r,
+    targetC: playerSpawn.c,
+    dir: { r: 0, c: 0 },
+    nextDir: { r: 0, c: 0 },
+    mouthAngle: 0,
+    color: '#ffd23f',
+    alive: true,
+  };
+
+  // Four ghosts (use the spawns, repeating if fewer)
+  const ghostColors = ['#ff3366', '#ff89e0', '#00f0ff', '#ff9933'];
+  const ghostNames  = ['BLINKY', 'PINKY', 'INKY', 'CLYDE'];
+  game.ghosts = [];
+  for (let i = 0; i < 4; i++) {
+    const spawn = ghostSpawns[i % Math.max(ghostSpawns.length, 1)] || playerSpawn;
+    game.ghosts.push({
+      r: spawn.r + 0.0,
+      c: spawn.c + 0.0 + (i - 1.5) * 0.0001,  // tiny offset to avoid overlap
+      targetR: spawn.r,
+      targetC: spawn.c,
+      dir: { r: 0, c: i % 2 ? 1 : -1 },
+      color: ghostColors[i],
+      name: ghostNames[i],
+      scared: false,
+      eaten: false,
+      respawnAt: 0,
+      releaseDelay: i * 1500,    // ghosts leave the pen one by one
+      releaseAt: performance.now() + i * 1500,
+      home: { r: spawn.r, c: spawn.c },
+    });
+  }
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// CONTROLS
+// ════════════════════════════════════════════════════════════════════════════
+document.addEventListener('keydown', e => {
+  if (!game.active) return;
+  let dir = null;
+  if (e.key === 'ArrowUp'    || e.key.toLowerCase() === 'w') dir = { r: -1, c: 0 };
+  else if (e.key === 'ArrowDown'  || e.key.toLowerCase() === 's') dir = { r:  1, c: 0 };
+  else if (e.key === 'ArrowLeft'  || e.key.toLowerCase() === 'a') dir = { r:  0, c: -1 };
+  else if (e.key === 'ArrowRight' || e.key.toLowerCase() === 'd') dir = { r:  0, c:  1 };
+  if (dir) {
+    e.preventDefault();
+    game.player.nextDir = dir;
+  }
+});
+
+document.querySelectorAll('.pad-btn').forEach(btn => {
+  const press = e => {
+    e.preventDefault();
+    if (!game.active) return;
+    const map = {
+      up:    { r: -1, c: 0 },
+      down:  { r:  1, c: 0 },
+      left:  { r:  0, c: -1 },
+      right: { r:  0, c:  1 },
+    };
+    game.player.nextDir = map[btn.dataset.dir];
+  };
+  btn.addEventListener('touchstart', press, { passive: false });
+  btn.addEventListener('mousedown', press);
+});
+
+// Swipe controls on the maze
+let touchStart = null;
+$('maze-canvas').addEventListener('touchstart', e => {
+  if (!game.active) return;
+  touchStart = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+}, { passive: true });
+$('maze-canvas').addEventListener('touchend', e => {
+  if (!game.active || !touchStart) return;
+  const dx = e.changedTouches[0].clientX - touchStart.x;
+  const dy = e.changedTouches[0].clientY - touchStart.y;
+  if (Math.abs(dx) < 30 && Math.abs(dy) < 30) return;
+  if (Math.abs(dx) > Math.abs(dy)) {
+    game.player.nextDir = dx > 0 ? { r: 0, c: 1 } : { r: 0, c: -1 };
+  } else {
+    game.player.nextDir = dy > 0 ? { r: 1, c: 0 } : { r: -1, c: 0 };
+  }
+  touchStart = null;
+}, { passive: true });
+
+// ════════════════════════════════════════════════════════════════════════════
+// MAIN LOOP
+// ════════════════════════════════════════════════════════════════════════════
+function loop() {
+  if (!game.active) return;
+
+  if (!game.paused) {
+    update();
+  }
+  render();
+
+  game.rafId = requestAnimationFrame(loop);
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// MAZE NAVIGATION HELPERS
+// ════════════════════════════════════════════════════════════════════════════
+function isWall(r, c) {
+  // Wrap horizontal tunnels
+  if (c < 0 || c >= COLS) return false;
+  if (r < 0 || r >= ROWS) return true;
+  return game.cells[r][c].type === 'wall';
+}
+
+function canMove(r, c, dir) {
+  // Check the destination cell
+  let nr = r + dir.r;
+  let nc = c + dir.c;
+  // Tunnel wrap on horizontal moves
+  if (nc < 0) nc = COLS - 1;
+  if (nc >= COLS) nc = 0;
+  return !isWall(nr, nc);
+}
+
+function alignedToGrid(entity, eps = 0.08) {
+  return Math.abs(entity.r - Math.round(entity.r)) < eps &&
+         Math.abs(entity.c - Math.round(entity.c)) < eps;
+}
+
+function snapToGrid(entity) {
+  entity.r = Math.round(entity.r);
+  entity.c = Math.round(entity.c);
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// UPDATE
+// ════════════════════════════════════════════════════════════════════════════
+function update() {
+  // Check power-pellet expiration
+  if (game.powerActive && performance.now() > game.powerEndTime) {
+    game.powerActive = false;
+    game.ghosts.forEach(g => g.scared = false);
+  }
+
+  movePlayer();
+  moveGhosts();
+  checkCollisions();
+}
+
+function movePlayer() {
+  const p = game.player;
+
+  // Try switching to nextDir at intersections
+  if (alignedToGrid(p) && (p.nextDir.r || p.nextDir.c)) {
+    if (canMove(Math.round(p.r), Math.round(p.c), p.nextDir)) {
+      p.dir = p.nextDir;
+      p.nextDir = { r: 0, c: 0 };
+      snapToGrid(p);
+    }
+  }
+
+  // Move along current dir if possible
+  if (p.dir.r === 0 && p.dir.c === 0) return;
+
+  // Look ahead: stop if next cell is a wall
+  const nextR = Math.round(p.r) + p.dir.r;
+  let nextC = Math.round(p.c) + p.dir.c;
+
+  if (isWall(nextR, ((nextC + COLS) % COLS))) {
+    if (alignedToGrid(p)) {
+      snapToGrid(p);
+      return;
+    }
+  }
+
+  // Slide forward
+  p.r += p.dir.r * CONFIG.PLAYER_SPEED;
+  p.c += p.dir.c * CONFIG.PLAYER_SPEED;
+
+  // Tunnel wrap
+  if (p.c < -0.5) p.c = COLS - 0.5;
+  if (p.c > COLS - 0.5) p.c = -0.5;
+
+  // Mouth animation
+  p.mouthAngle = (p.mouthAngle + 0.4) % (Math.PI * 2);
+}
+
+function moveGhosts() {
+  const now = performance.now();
+  game.ghosts.forEach(g => {
+    if (now < g.releaseAt) return;  // still in pen
+
+    // If eaten, respawn after a delay
+    if (g.eaten) {
+      if (now > g.respawnAt) {
+        g.eaten = false;
+        g.scared = false;
+        g.r = g.home.r;
+        g.c = g.home.c;
+      } else return;
+    }
+
+    // Pick a new direction at intersections
+    if (alignedToGrid(g)) {
+      snapToGrid(g);
+      pickGhostDir(g);
+    }
+
+    const speed = (g.scared ? CONFIG.GHOST_SCARED_SPEED : CONFIG.GHOST_BASE_SPEED) * game.ghostSpeedBoost;
+    g.r += g.dir.r * speed;
+    g.c += g.dir.c * speed;
+
+    if (g.c < -0.5) g.c = COLS - 0.5;
+    if (g.c > COLS - 0.5) g.c = -0.5;
+  });
+}
+
+function pickGhostDir(g) {
+  const r = Math.round(g.r);
+  const c = Math.round(g.c);
+  const opposite = { r: -g.dir.r, c: -g.dir.c };
+
+  // Available dirs
+  const options = [
+    { r: -1, c:  0 },
+    { r:  1, c:  0 },
+    { r:  0, c: -1 },
+    { r:  0, c:  1 },
+  ].filter(d => {
+    if (d.r === opposite.r && d.c === opposite.c) return false;
+    return canMove(r, c, d);
+  });
+
+  if (options.length === 0) {
+    // Dead end: reverse
+    g.dir = opposite;
+    return;
+  }
+
+  // Pick the option closest to (or farthest from) the player
+  const target = g.scared ? null : { r: game.player.r, c: game.player.c };
+  if (target) {
+    options.sort((a, b) => {
+      const distA = Math.hypot(r + a.r - target.r, c + a.c - target.c);
+      const distB = Math.hypot(r + b.r - target.r, c + b.c - target.c);
+      // Each ghost has slightly different personality:
+      // Blinky chases hard, others chase 80%, scared ghosts run away
+      return distA - distB;
+    });
+    // 75% chance to pick the best, 25% random (keeps ghosts beatable)
+    if (Math.random() < 0.75) {
+      g.dir = options[0];
+    } else {
+      g.dir = options[Math.floor(Math.random() * options.length)];
+    }
+  } else {
+    // Scared: random
+    g.dir = options[Math.floor(Math.random() * options.length)];
+  }
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// COLLISIONS
+// ════════════════════════════════════════════════════════════════════════════
+function checkCollisions() {
+  const pr = Math.round(game.player.r);
+  const pc = Math.round(game.player.c);
+
+  // Pellet pickup
+  if (alignedToGrid(game.player, 0.2)) {
+    const cell = game.cells[pr]?.[pc];
+    if (cell && (cell.type === 'pellet' || cell.type === 'power')) {
+      pickupPellet(pr, pc);
+    }
+  }
+
+  // Ghost collision
+  for (const g of game.ghosts) {
+    if (g.eaten) continue;
+    const dist = Math.hypot(g.r - game.player.r, g.c - game.player.c);
+    if (dist < 0.6) {
+      if (g.scared) {
+        eatGhost(g);
+      } else {
+        playerDies();
+        return;
+      }
+    }
+  }
+}
+
+function pickupPellet(r, c) {
+  const cell = game.cells[r][c];
+  const word = game.pelletWords.get(cellKey(r, c));
+  if (!word) return;
+
+  // Open the translation modal — pause game while open
+  game.paused = true;
+  game.pendingPellet = { r, c, word, isPower: cell.type === 'power' };
+  showTranslationModal(word, (isCorrect, given) => {
+    if (isCorrect) {
+      // Eat the pellet
+      const pts = cell.type === 'power' ? 50 : 10;
+      game.score += pts;
+      game.pelletsEaten++;
+      game.pelletsRemaining--;
+      cell.type = 'empty';
+
+      if (cell.type === 'power' || game.pendingPellet.isPower) {
+        // (already cleared) — activate power
+      }
+      if (game.pendingPellet.isPower) {
+        game.powerActive = true;
+        game.powerEndTime = performance.now() + CONFIG.POWER_DURATION_MS;
+        game.ghosts.forEach(g => { if (!g.eaten) g.scared = true; });
+      }
+
+      // Particle effect
+      const rect = $('maze-canvas').getBoundingClientRect();
+      const cellSize = rect.width / COLS;
+      const x = rect.left + (c + 0.5) * cellSize;
+      const y = rect.top  + (r + 0.5) * cellSize;
+      burstParticles(x, y, '#ffaa44', 12);
+
+      updateHUD();
+      checkWinCondition();
+    } else {
+      // Wrong answer: ghosts speed up
+      game.ghostSpeedBoost = Math.min(1.6, game.ghostSpeedBoost + 0.06);
+      game.mistakes.push({
+        swedish: word.swedish,
+        english: word.english,
+        given,
+      });
+    }
+
+    game.pendingPellet = null;
+    game.paused = false;
+  });
+}
+
+function eatGhost(g) {
+  g.eaten = true;
+  g.scared = false;
+  g.respawnAt = performance.now() + 4000;
+  game.ghostsEaten++;
+  game.score += 200;
+  showCombo('GHOST!');
+
+  const rect = $('maze-canvas').getBoundingClientRect();
+  const cellSize = rect.width / COLS;
+  const x = rect.left + (g.c + 0.5) * cellSize;
+  const y = rect.top  + (g.r + 0.5) * cellSize;
+  burstParticles(x, y, g.color, 24);
+  updateHUD();
+}
+
+function playerDies() {
+  game.lives--;
+  game.player.alive = false;
+  game.paused = true;
+  updateHUD();
+
+  // Death animation
+  const rect = $('maze-canvas').getBoundingClientRect();
+  const cellSize = rect.width / COLS;
+  const x = rect.left + (game.player.c + 0.5) * cellSize;
+  const y = rect.top  + (game.player.r + 0.5) * cellSize;
+  burstParticles(x, y, '#ffd23f', 30);
+
+  if (game.lives <= 0) {
+    setTimeout(() => endGame(false), 1100);
+  } else {
+    // Respawn
+    setTimeout(() => {
+      const playerSpawn = findSpawn('P');
+      const ghostSpawns = findAllSpawns('G');
+      game.player.r = playerSpawn.r; game.player.c = playerSpawn.c;
+      game.player.dir = { r: 0, c: 0 };
+      game.player.nextDir = { r: 0, c: 0 };
+      game.player.alive = true;
+
+      game.ghosts.forEach((g, i) => {
+        const sp = ghostSpawns[i % Math.max(ghostSpawns.length, 1)] || playerSpawn;
+        g.r = sp.r; g.c = sp.c;
+        g.releaseAt = performance.now() + i * 1000;
+        g.scared = false;
+        g.eaten = false;
+      });
+      game.paused = false;
+    }, 1200);
+  }
+}
+
+function findSpawn(ch) {
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      if (MAZE[r][c] === ch) return { r, c };
+    }
+  }
+  return { r: 1, c: 1 };
+}
+function findAllSpawns(ch) {
+  const out = [];
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      if (MAZE[r][c] === ch) out.push({ r, c });
+    }
+  }
+  return out;
+}
+
+function checkWinCondition() {
+  if (game.pelletsRemaining <= 0) {
+    setTimeout(() => endGame(true), 600);
+  }
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// TRANSLATION MODAL
+// ════════════════════════════════════════════════════════════════════════════
+function showTranslationModal(word, callback) {
+  const overlay = $('trans-overlay');
+  $('trans-prompt').textContent = 'SWEDISH → ENGLISH';
+  $('trans-word').textContent = word.swedish;
+
+  // Pick distractors
+  const others = shuffle(WORDS.filter(w => w !== word)).slice(0, 3).map(w => w.english);
+  const choices = shuffle([word.english, ...others]);
+
+  const grid = $('trans-choices');
+  grid.innerHTML = '';
+  choices.forEach(choice => {
+    const btn = document.createElement('button');
+    btn.className = 'trans-choice';
+    btn.textContent = choice;
+    btn.onclick = () => {
+      // Disable all
+      grid.querySelectorAll('.trans-choice').forEach(b => {
+        b.disabled = true;
+        if (norm(b.textContent) === norm(word.english)) b.classList.add('correct');
+      });
+      const isCorrect = norm(choice) === norm(word.english);
+      if (!isCorrect) btn.classList.add('wrong');
+
+      setTimeout(() => {
+        overlay.classList.remove('active');
+        callback(isCorrect, choice);
+      }, isCorrect ? 350 : 700);
+    };
+    grid.appendChild(btn);
+  });
+
+  overlay.classList.add('active');
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// HUD
+// ════════════════════════════════════════════════════════════════════════════
+function updateHUD() {
+  $('stat-score').textContent = game.score;
+  $('stat-lives').textContent = game.lives > 0 ? '❤'.repeat(game.lives) : '💀';
+  $('stat-pellets').textContent = game.pelletsEaten;
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// RENDER
+// ════════════════════════════════════════════════════════════════════════════
+function render() {
+  const canvas = $('maze-canvas');
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  const cs = CONFIG.CELL_SIZE;
+
+  // Walls
+  ctx.fillStyle = '#1e3a8a';
+  ctx.strokeStyle = '#3b82f6';
+  ctx.lineWidth = 2;
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      if (game.cells[r][c].type === 'wall') {
+        ctx.fillRect(c * cs, r * cs, cs, cs);
+        ctx.strokeRect(c * cs + 1, r * cs + 1, cs - 2, cs - 2);
+      }
+    }
+  }
+
+  // Pellets
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      const t = game.cells[r][c].type;
+      if (t === 'pellet') {
+        ctx.fillStyle = '#ffaa44';
+        ctx.shadowColor = '#ffaa44';
+        ctx.shadowBlur = 6;
+        ctx.beginPath();
+        ctx.arc(c * cs + cs / 2, r * cs + cs / 2, 3, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+      } else if (t === 'power') {
+        const pulse = (Math.sin(performance.now() / 200) + 1) / 2;
+        ctx.fillStyle = '#ff5577';
+        ctx.shadowColor = '#ff5577';
+        ctx.shadowBlur = 14 + pulse * 10;
+        ctx.beginPath();
+        ctx.arc(c * cs + cs / 2, r * cs + cs / 2, 7 + pulse * 2, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+      }
+    }
+  }
+
+  // Ghosts
+  game.ghosts.forEach(g => drawGhost(ctx, g, cs));
+
+  // Player (Pac-Man)
+  if (game.player.alive) drawPacMan(ctx, game.player, cs);
+}
+
+function drawPacMan(ctx, p, cs) {
+  const x = p.c * cs + cs / 2;
+  const y = p.r * cs + cs / 2;
+  const radius = cs * 0.42;
+
+  // Mouth direction based on dir
+  let baseAngle = 0;
+  if (p.dir.c > 0) baseAngle = 0;
+  else if (p.dir.c < 0) baseAngle = Math.PI;
+  else if (p.dir.r < 0) baseAngle = -Math.PI / 2;
+  else if (p.dir.r > 0) baseAngle = Math.PI / 2;
+
+  const mouth = Math.abs(Math.sin(p.mouthAngle)) * 0.5;
+
+  ctx.fillStyle = '#ffd23f';
+  ctx.shadowColor = '#ffd23f';
+  ctx.shadowBlur = 12;
+  ctx.beginPath();
+  ctx.moveTo(x, y);
+  ctx.arc(x, y, radius, baseAngle + mouth, baseAngle - mouth + Math.PI * 2);
+  ctx.lineTo(x, y);
+  ctx.fill();
+  ctx.shadowBlur = 0;
+}
+
+function drawGhost(ctx, g, cs) {
+  const x = g.c * cs + cs / 2;
+  const y = g.r * cs + cs / 2;
+  const r = cs * 0.4;
+
+  let bodyColor = g.color;
+  if (g.eaten) {
+    // Just eyes traveling home
+    ctx.fillStyle = '#fff';
+    ctx.beginPath();
+    ctx.arc(x - 5, y, 3, 0, Math.PI * 2);
+    ctx.arc(x + 5, y, 3, 0, Math.PI * 2);
+    ctx.fill();
+    return;
+  }
+  if (g.scared) {
+    // Flash near end of power
+    const remaining = game.powerEndTime - performance.now();
+    bodyColor = (remaining < 2000 && Math.floor(performance.now() / 200) % 2)
+      ? '#fff' : '#2233ff';
+  }
+
+  ctx.fillStyle = bodyColor;
+  ctx.shadowColor = bodyColor;
+  ctx.shadowBlur = 10;
+
+  // Ghost body (rounded top, wavy bottom)
+  ctx.beginPath();
+  ctx.arc(x, y - 2, r, Math.PI, 0);
+  // Wavy bottom
+  const bottomY = y + r - 2;
+  ctx.lineTo(x + r, bottomY);
+  for (let i = 0; i < 4; i++) {
+    const dx = (i % 2 === 0) ? -3 : -3;
+    ctx.lineTo(x + r - i * (r / 2), bottomY + (i % 2 === 0 ? 3 : -3));
+  }
+  ctx.lineTo(x - r, bottomY);
+  ctx.closePath();
+  ctx.fill();
+  ctx.shadowBlur = 0;
+
+  // Eyes
+  ctx.fillStyle = '#fff';
+  ctx.beginPath();
+  ctx.arc(x - 5, y - 3, 3, 0, Math.PI * 2);
+  ctx.arc(x + 5, y - 3, 3, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Pupils — look in direction of movement
+  ctx.fillStyle = '#0a0';
+  if (g.scared) ctx.fillStyle = '#fff';
+  const px = g.dir.c * 1.5;
+  const py = g.dir.r * 1.5;
+  ctx.beginPath();
+  ctx.arc(x - 5 + px, y - 3 + py, 1.5, 0, Math.PI * 2);
+  ctx.arc(x + 5 + px, y - 3 + py, 1.5, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// END
+// ════════════════════════════════════════════════════════════════════════════
+function endGame(won) {
+  game.active = false;
+  if (game.rafId) cancelAnimationFrame(game.rafId);
+
+  const isNewRecord = saveHighScore(game.score);
+
+  showScreen('end-screen');
+  $('end-banner').textContent = won ? 'YOU WIN!' : 'GAME OVER';
+  $('end-banner').classList.toggle('win', won);
+  $('end-score').textContent = game.score;
+  $('end-pellets').textContent = `${game.pelletsEaten} / ${game.pelletsTotal}`;
+  $('end-ghosts').textContent = game.ghostsEaten;
+  $('end-best').textContent = highScore;
+  $('new-record-line').innerHTML = isNewRecord ? '<div class="new-record">★ NEW HIGH SCORE ★</div>' : '';
+
+  renderMistakes();
+  if (isNewRecord || won) confettiBurst(120);
+}
+
+function renderMistakes() {
+  const container = $('mistakes-container');
+  if (game.mistakes.length === 0) {
+    container.innerHTML = '';
+    return;
+  }
+  const items = game.mistakes.map(m => `
+    <div class="mistake-item">
+      <div>${escapeHtml(m.swedish)}</div>
+      <div class="arrow">→</div>
+      <div><span class="en">${escapeHtml(m.english)}</span></div>
+    </div>
+  `).join('');
+  container.innerHTML = `
+    <div class="mistakes-recap">
+      <div class="mistakes-header">
+        <span>📚 WORDS TO REVIEW</span>
+        <span>${game.mistakes.length}</span>
+      </div>
+      <div class="mistakes-list">${items}</div>
+    </div>
+  `;
+}
+
+function quitGame() {
+  if (!confirm('Quit current game?')) return;
+  game.active = false;
+  if (game.rafId) cancelAnimationFrame(game.rafId);
+  resetGame();
+  showScreen('title-screen');
+  loadHighScore();
+}
+
+function goToTitle() {
+  showScreen('title-screen');
+  loadHighScore();
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// EFFECTS
+// ════════════════════════════════════════════════════════════════════════════
+const COLORS = ['#ffd23f', '#ff5577', '#00f0ff', '#ff89e0', '#ff9933'];
+
+function burstParticles(cx, cy, color, count = 16) {
+  const layer = $('fx-layer');
+  for (let i = 0; i < count; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    p.style.background = color;
+    p.style.boxShadow = `0 0 8px ${color}`;
+    p.style.width = '6px';
+    p.style.height = '6px';
+    p.style.left = cx + 'px';
+    p.style.top = cy + 'px';
+    layer.appendChild(p);
+    const angle = Math.random() * Math.PI * 2;
+    const dist = 30 + Math.random() * 60;
+    const dur = 400 + Math.random() * 300;
+    p.animate(
+      [
+        { transform: 'translate(-50%,-50%) scale(1)', opacity: 1 },
+        { transform: `translate(${Math.cos(angle)*dist - 3}px, ${Math.sin(angle)*dist - 3}px) scale(0)`, opacity: 0 },
+      ],
+      { duration: dur, easing: 'ease-out', fill: 'forwards' }
+    ).onfinish = () => p.remove();
+  }
+}
+
+function confettiBurst(count) {
+  const layer = $('fx-layer');
+  const W = window.innerWidth;
+  for (let i = 0; i < count; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    const color = COLORS[Math.floor(Math.random() * COLORS.length)];
+    p.style.background = color;
+    p.style.boxShadow = `0 0 8px ${color}`;
+    p.style.width = '10px';
+    p.style.height = '14px';
+    p.style.left = Math.random() * W + 'px';
+    p.style.top = '-20px';
+    layer.appendChild(p);
+    const drift = (Math.random() - .5) * 200;
+    const dur = 1500 + Math.random() * 1500;
+    const rot = Math.random() * 720 - 360;
+    p.animate(
+      [
+        { transform: 'translate(0,0) rotate(0deg)', opacity: 1 },
+        { transform: `translate(${drift}px, ${window.innerHeight + 40}px) rotate(${rot}deg)`, opacity: .8 },
+      ],
+      { duration: dur, easing: 'cubic-bezier(.2,.6,.4,1)', fill: 'forwards' }
+    ).onfinish = () => p.remove();
+  }
+}
+
+function showCombo(text) {
+  const el = $('combo-text');
+  el.textContent = text;
+  el.classList.remove('show');
+  void el.offsetWidth;
+  el.classList.add('show');
+}
+</script>
+</body>
+</html>
