@@ -520,14 +520,14 @@
   <div class="arcade-card">
     <h3>How to play</h3>
     <p style="font-size:.5rem">
-      Eat all the word pellets!<br>
-      But each one asks for a translation.<br>
-      Wrong answer = ghosts speed up!<br>
-      Get caught = game over.
+      Eat the yellow dots to score!<br>
+      The red ones ask for a translation —<br>
+      get it right to make ghosts edible.<br>
+      Wrong answer = ghosts speed up!
     </p>
     <div class="legend">
-      <span>•</span> 10 PTS · WORD PELLET<br>
-      <span style="color:var(--power)">●</span> POWER PELLET — EAT GHOSTS<br>
+      <span>•</span> 10 PTS · YELLOW DOT (NO QUIZ)<br>
+      <span style="color:var(--power)">●</span> 50 PTS · POWER PELLET (TRANSLATE!)<br>
       👻 200 PTS · GHOST (WHEN BLUE)
     </div>
   </div>
@@ -609,28 +609,28 @@
 
 <script>
 // ════════════════════════════════════════════════════════════════════════════
-// MAZE LAYOUT
+// MAZE LAYOUT  (14 columns × 16 rows)
 // ════════════════════════════════════════════════════════════════════════════
-//   # = wall        . = pellet        o = power pellet
-//     = empty       G = ghost spawn   P = player spawn
-//   T = tunnel (teleport edges)
+//   # = wall        . = pellet         o = power pellet
+//     = empty       G = ghost spawn    P = player spawn
+//   T = tunnel       - = ghost pen door (one-way: ghosts can leave through it)
 const MAZE = [
-  '##############',
-  '#............#',
-  '#.####.####..#',
-  '#o#  #.#  #.o#',
-  '#.####.####..#',
-  '#............#',
-  '#.##.####.##.#',
-  '#.##.#GG#.##.#',
-  'T.....#GG#...T',
-  '#.##.######.##',
-  '#............#',
-  '#.####.####..#',
-  '#o..P......o.#',
-  '###.######.###',
-  '#............#',
-  '##############',
+  '##############',  //  0
+  '#o..........o#',  //  1
+  '#.####.#####.#',  //  2
+  '#.####.#####.#',  //  3
+  '#............#',  //  4
+  '#.##.######.##',  //  5
+  '#.##........##',  //  6
+  '#....###-###.#',  //  7
+  '##.#.#GGGG#.##',  //  8
+  'T....#GGGG#..T',  //  9
+  '##.#.######.##',  // 10
+  '#............#',  // 11
+  '#.##.######.##',  // 12
+  '#.##...P....##',  // 13
+  '#o..........o#',  // 14
+  '##############',  // 15
 ];
 const ROWS = MAZE.length;
 const COLS = MAZE[0].length;
@@ -787,6 +787,7 @@ function setupCanvas() {
 function parseMaze() {
   game.cells = [];
   let pelletCount = 0;
+  game.doorPos = null;
   for (let r = 0; r < ROWS; r++) {
     const row = [];
     for (let c = 0; c < COLS; c++) {
@@ -794,8 +795,10 @@ function parseMaze() {
       let cell = { type: 'empty' };
       if (ch === '#') cell.type = 'wall';
       else if (ch === '.') { cell.type = 'pellet'; pelletCount++; }
-      else if (ch === 'o') { cell.type = 'power'; }
-      else if (ch === 'T') { cell.type = 'tunnel'; }
+      else if (ch === 'o') { cell.type = 'power'; pelletCount++; }
+      else if (ch === '-') { cell.type = 'ghost-door'; game.doorPos = { r, c }; }
+      else if (ch === 'T') cell.type = 'tunnel';
+      else if (ch === 'G') cell.type = 'ghost-pen';
       row.push(cell);
     }
     game.cells.push(row);
@@ -803,18 +806,18 @@ function parseMaze() {
   game.pelletsTotal = pelletCount;
   game.pelletsRemaining = pelletCount;
 
-  // Assign random words to all pellets (and power pellets)
-  const allPellets = [];
+  // Assign random words ONLY to power pellets (the red ones)
+  // — yellow pellets don't need a translation
+  const powerPellets = [];
   for (let r = 0; r < ROWS; r++) {
     for (let c = 0; c < COLS; c++) {
-      const t = game.cells[r][c].type;
-      if (t === 'pellet' || t === 'power') {
-        allPellets.push([r, c]);
+      if (game.cells[r][c].type === 'power') {
+        powerPellets.push([r, c]);
       }
     }
   }
   const shuffled = shuffle(WORDS);
-  allPellets.forEach(([r, c], i) => {
+  powerPellets.forEach(([r, c], i) => {
     game.pelletWords.set(cellKey(r, c), shuffled[i % shuffled.length]);
   });
 
@@ -833,7 +836,7 @@ function spawnEntities() {
       if (MAZE[r][c] === 'G') ghostSpawns.push({ r, c });
     }
   }
-  if (!playerSpawn) playerSpawn = { r: ROWS - 3, c: 4 };
+  if (!playerSpawn) playerSpawn = { r: 13, c: 6 };
 
   // Player
   game.player = {
@@ -848,25 +851,24 @@ function spawnEntities() {
     alive: true,
   };
 
-  // Four ghosts (use the spawns, repeating if fewer)
+  // Four ghosts — spread across the available G spots, staggered release
   const ghostColors = ['#ff3366', '#ff89e0', '#00f0ff', '#ff9933'];
   const ghostNames  = ['BLINKY', 'PINKY', 'INKY', 'CLYDE'];
+  const now = performance.now();
   game.ghosts = [];
   for (let i = 0; i < 4; i++) {
+    // Use distinct pen cells where possible
     const spawn = ghostSpawns[i % Math.max(ghostSpawns.length, 1)] || playerSpawn;
     game.ghosts.push({
       r: spawn.r + 0.0,
-      c: spawn.c + 0.0 + (i - 1.5) * 0.0001,  // tiny offset to avoid overlap
-      targetR: spawn.r,
-      targetC: spawn.c,
-      dir: { r: 0, c: i % 2 ? 1 : -1 },
+      c: spawn.c + 0.0,
+      dir: { r: -1, c: 0 },           // start moving up toward door
       color: ghostColors[i],
       name: ghostNames[i],
       scared: false,
       eaten: false,
-      respawnAt: 0,
-      releaseDelay: i * 1500,    // ghosts leave the pen one by one
-      releaseAt: performance.now() + i * 1500,
+      // Each ghost waits a bit longer than the previous, so they leave one-by-one
+      releaseAt: now + i * 2500,
       home: { r: spawn.r, c: spawn.c },
     });
   }
@@ -947,11 +949,26 @@ function isWall(r, c) {
   return game.cells[r][c].type === 'wall';
 }
 
+// The ghost-door is solid for the player but passable for ghosts.
+function isWallForPlayer(r, c) {
+  if (c < 0 || c >= COLS) return false;
+  if (r < 0 || r >= ROWS) return true;
+  const t = game.cells[r][c].type;
+  return t === 'wall' || t === 'ghost-door';
+}
+
 function canMove(r, c, dir) {
-  // Check the destination cell
   let nr = r + dir.r;
   let nc = c + dir.c;
-  // Tunnel wrap on horizontal moves
+  if (nc < 0) nc = COLS - 1;
+  if (nc >= COLS) nc = 0;
+  return !isWallForPlayer(nr, nc);
+}
+
+// Ghosts use the more permissive isWall (can pass through their door)
+function canMoveGhost(r, c, dir) {
+  let nr = r + dir.r;
+  let nc = c + dir.c;
   if (nc < 0) nc = COLS - 1;
   if (nc >= COLS) nc = 0;
   return !isWall(nr, nc);
@@ -1023,16 +1040,29 @@ function movePlayer() {
 function moveGhosts() {
   const now = performance.now();
   game.ghosts.forEach(g => {
-    if (now < g.releaseAt) return;  // still in pen
+    if (now < g.releaseAt) return;  // still in pen, not yet released
 
-    // If eaten, respawn after a delay
+    // If eaten, the ghost (as eyes) flies back to home, then re-spawns
     if (g.eaten) {
-      if (now > g.respawnAt) {
+      // Move toward home position
+      const dr = g.home.r - g.r;
+      const dc = g.home.c - g.c;
+      const dist = Math.hypot(dr, dc);
+      if (dist < 0.15) {
+        // Reached home — re-spawn after a brief delay
         g.eaten = false;
         g.scared = false;
         g.r = g.home.r;
         g.c = g.home.c;
-      } else return;
+        g.dir = { r: 0, c: 0 };
+        g.releaseAt = now + 1500;   // wait 1.5s before leaving the pen again
+      } else {
+        // Fly straight back (eyes can move through walls)
+        const speed = 0.18;
+        g.r += (dr / dist) * speed;
+        g.c += (dc / dist) * speed;
+      }
+      return;
     }
 
     // Pick a new direction at intersections
@@ -1055,7 +1085,22 @@ function pickGhostDir(g) {
   const c = Math.round(g.c);
   const opposite = { r: -g.dir.r, c: -g.dir.c };
 
-  // Available dirs
+  // If ghost is currently inside the pen, head straight for the exit door
+  const inPen = (game.cells[r] && game.cells[r][c]?.type === 'ghost-pen');
+  let target;
+  if (inPen) {
+    // Find the door cell (only one in the maze)
+    target = game.doorPos || { r: 7, c: 8 };
+  } else if (g.eaten) {
+    // Eyes returning home
+    target = g.home;
+  } else if (g.scared) {
+    target = null;  // run randomly
+  } else {
+    target = { r: game.player.r, c: game.player.c };
+  }
+
+  // Available dirs (ghosts can pass through their door)
   const options = [
     { r: -1, c:  0 },
     { r:  1, c:  0 },
@@ -1063,7 +1108,7 @@ function pickGhostDir(g) {
     { r:  0, c:  1 },
   ].filter(d => {
     if (d.r === opposite.r && d.c === opposite.c) return false;
-    return canMove(r, c, d);
+    return canMoveGhost(r, c, d);
   });
 
   if (options.length === 0) {
@@ -1072,18 +1117,16 @@ function pickGhostDir(g) {
     return;
   }
 
-  // Pick the option closest to (or farthest from) the player
-  const target = g.scared ? null : { r: game.player.r, c: game.player.c };
   if (target) {
     options.sort((a, b) => {
       const distA = Math.hypot(r + a.r - target.r, c + a.c - target.c);
       const distB = Math.hypot(r + b.r - target.r, c + b.c - target.c);
-      // Each ghost has slightly different personality:
-      // Blinky chases hard, others chase 80%, scared ghosts run away
       return distA - distB;
     });
-    // 75% chance to pick the best, 25% random (keeps ghosts beatable)
-    if (Math.random() < 0.75) {
+    // Inside the pen, always pick the best move (need to escape)
+    if (inPen || g.eaten) {
+      g.dir = options[0];
+    } else if (Math.random() < 0.75) {
       g.dir = options[0];
     } else {
       g.dir = options[Math.floor(Math.random() * options.length)];
@@ -1126,58 +1169,74 @@ function checkCollisions() {
 
 function pickupPellet(r, c) {
   const cell = game.cells[r][c];
-  const word = game.pelletWords.get(cellKey(r, c));
-  if (!word) return;
+  const cellSize = $('maze-canvas').getBoundingClientRect().width / COLS;
+  const rect = $('maze-canvas').getBoundingClientRect();
+  const x = rect.left + (c + 0.5) * cellSize;
+  const y = rect.top  + (r + 0.5) * cellSize;
 
-  // Open the translation modal — pause game while open
-  game.paused = true;
-  game.pendingPellet = { r, c, word, isPower: cell.type === 'power' };
-  showTranslationModal(word, (isCorrect, given) => {
-    if (isCorrect) {
-      // Eat the pellet
-      const pts = cell.type === 'power' ? 50 : 10;
-      game.score += pts;
+  if (cell.type === 'pellet') {
+    // Yellow pellet — just eat it, no question
+    game.score += 10;
+    game.pelletsEaten++;
+    game.pelletsRemaining--;
+    cell.type = 'empty';
+    burstParticles(x, y, '#ffaa44', 6);
+    updateHUD();
+    checkWinCondition();
+    return;
+  }
+
+  if (cell.type === 'power') {
+    // Red/pink power pellet — ask a question
+    const word = game.pelletWords.get(cellKey(r, c));
+    if (!word) {
+      // Fallback: just eat it
+      cell.type = 'empty';
       game.pelletsEaten++;
       game.pelletsRemaining--;
-      cell.type = 'empty';
-
-      if (cell.type === 'power' || game.pendingPellet.isPower) {
-        // (already cleared) — activate power
-      }
-      if (game.pendingPellet.isPower) {
-        game.powerActive = true;
-        game.powerEndTime = performance.now() + CONFIG.POWER_DURATION_MS;
-        game.ghosts.forEach(g => { if (!g.eaten) g.scared = true; });
-      }
-
-      // Particle effect
-      const rect = $('maze-canvas').getBoundingClientRect();
-      const cellSize = rect.width / COLS;
-      const x = rect.left + (c + 0.5) * cellSize;
-      const y = rect.top  + (r + 0.5) * cellSize;
-      burstParticles(x, y, '#ffaa44', 12);
-
+      activatePower();
       updateHUD();
       checkWinCondition();
-    } else {
-      // Wrong answer: ghosts speed up
-      game.ghostSpeedBoost = Math.min(1.6, game.ghostSpeedBoost + 0.06);
-      game.mistakes.push({
-        swedish: word.swedish,
-        english: word.english,
-        given,
-      });
+      return;
     }
 
-    game.pendingPellet = null;
-    game.paused = false;
-  });
+    game.paused = true;
+    game.pendingPellet = { r, c, word };
+    showTranslationModal(word, (isCorrect, given) => {
+      if (isCorrect) {
+        // Eat the power pellet → ghosts become scared
+        game.score += 50;
+        game.pelletsEaten++;
+        game.pelletsRemaining--;
+        cell.type = 'empty';
+        activatePower();
+        burstParticles(x, y, '#ff5577', 24);
+      } else {
+        // Wrong answer: ghosts speed up and pellet stays
+        game.ghostSpeedBoost = Math.min(1.6, game.ghostSpeedBoost + 0.1);
+        game.mistakes.push({
+          swedish: word.swedish,
+          english: word.english,
+          given,
+        });
+      }
+      game.pendingPellet = null;
+      game.paused = false;
+      updateHUD();
+      checkWinCondition();
+    });
+  }
+}
+
+function activatePower() {
+  game.powerActive = true;
+  game.powerEndTime = performance.now() + CONFIG.POWER_DURATION_MS;
+  game.ghosts.forEach(g => { if (!g.eaten) g.scared = true; });
 }
 
 function eatGhost(g) {
   g.eaten = true;
   g.scared = false;
-  g.respawnAt = performance.now() + 4000;
   game.ghostsEaten++;
   game.score += 200;
   showCombo('GHOST!');
@@ -1215,12 +1274,14 @@ function playerDies() {
       game.player.nextDir = { r: 0, c: 0 };
       game.player.alive = true;
 
+      const now = performance.now();
       game.ghosts.forEach((g, i) => {
         const sp = ghostSpawns[i % Math.max(ghostSpawns.length, 1)] || playerSpawn;
         g.r = sp.r; g.c = sp.c;
-        g.releaseAt = performance.now() + i * 1000;
+        g.releaseAt = now + i * 2000;
         g.scared = false;
         g.eaten = false;
+        g.dir = { r: -1, c: 0 };
       });
       game.paused = false;
     }, 1200);
@@ -1247,8 +1308,47 @@ function findAllSpawns(ch) {
 
 function checkWinCondition() {
   if (game.pelletsRemaining <= 0) {
-    setTimeout(() => endGame(true), 600);
+    // Level cleared! Respawn pellets and bump difficulty
+    game.level++;
+    game.ghostSpeedBoost = Math.min(1.8, game.ghostSpeedBoost + 0.15);
+
+    showCombo(`LEVEL ${game.level}!`);
+    confettiBurst(80);
+
+    // Respawn all pellets after a brief pause
+    setTimeout(() => {
+      respawnPellets();
+    }, 1500);
   }
+}
+
+function respawnPellets() {
+  let count = 0;
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      const ch = MAZE[r][c];
+      if (ch === '.') { game.cells[r][c].type = 'pellet'; count++; }
+      else if (ch === 'o') { game.cells[r][c].type = 'power'; count++; }
+    }
+  }
+  game.pelletsTotal = count;
+  game.pelletsRemaining = count;
+  game.pelletsEaten = 0;
+
+  // Re-assign words to power pellets
+  game.pelletWords.clear();
+  const powerPellets = [];
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      if (game.cells[r][c].type === 'power') powerPellets.push([r, c]);
+    }
+  }
+  const shuffled = shuffle(WORDS);
+  powerPellets.forEach(([r, c], i) => {
+    game.pelletWords.set(cellKey(r, c), shuffled[i % shuffled.length]);
+  });
+
+  updateHUD();
 }
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -1317,6 +1417,11 @@ function render() {
       if (game.cells[r][c].type === 'wall') {
         ctx.fillRect(c * cs, r * cs, cs, cs);
         ctx.strokeRect(c * cs + 1, r * cs + 1, cs - 2, cs - 2);
+      } else if (game.cells[r][c].type === 'ghost-door') {
+        // Pink horizontal bar — visually marks the pen door
+        ctx.fillStyle = '#ff89e0';
+        ctx.fillRect(c * cs, r * cs + cs / 2 - 2, cs, 4);
+        ctx.fillStyle = '#1e3a8a';   // restore for next walls
       }
     }
   }
