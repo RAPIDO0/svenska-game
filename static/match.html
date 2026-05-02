@@ -519,8 +519,83 @@
     max-width: 420px;
   }
 
-  /* Loading */
-  .spinner {
+  /* Result sections (matches + mistakes) */
+  .result-card {
+    background: rgba(255,255,255,.9);
+    backdrop-filter: blur(10px);
+    border: 3px solid var(--pink);
+    border-radius: 14px;
+    overflow: hidden;
+    width: 100%;
+    max-width: 420px;
+    margin-bottom: 14px;
+    box-shadow: 0 4px 14px var(--shadow);
+  }
+  .result-card-header {
+    padding: 12px 18px;
+    font-size: .8rem;
+    font-weight: 800;
+    color: var(--pink-deep);
+    border-bottom: 2px solid var(--pink-light);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .result-card-header.mistakes { color: #d32f2f; border-bottom-color: #ffcdd2; }
+  .result-count {
+    background: var(--pink);
+    color: #fff;
+    padding: 2px 10px;
+    border-radius: 99px;
+    font-size: .7rem;
+  }
+  .result-card-header.mistakes .result-count { background: #d32f2f; }
+  .result-list {
+    max-height: 240px;
+    overflow-y: auto;
+  }
+  .result-item {
+    padding: 8px 18px;
+    border-bottom: 1px solid var(--pink-light);
+    font-size: .85rem;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 10px;
+    align-items: center;
+    text-align: left;
+    line-height: 1.4;
+  }
+  .result-item:last-child { border-bottom: none; }
+  .result-item .arrow { color: var(--muted); }
+  .result-item .sv { color: var(--text); font-weight: 700; }
+  .result-item .en { color: var(--pink-deep); font-weight: 700; }
+  .result-item .wrong-en {
+    color: #d32f2f;
+    font-size: .7rem;
+    text-decoration: line-through;
+    display: block;
+    margin-top: 2px;
+    font-weight: 600;
+  }
+
+  .perfect-banner {
+    background: linear-gradient(135deg, #fff9c4, #ffe9a8);
+    border: 3px solid var(--gold);
+    color: #b48a00;
+    padding: 14px;
+    border-radius: 14px;
+    text-align: center;
+    width: 100%;
+    max-width: 420px;
+    margin-bottom: 14px;
+    font-weight: 900;
+    letter-spacing: 2px;
+    box-shadow: 0 4px 14px rgba(255,210,63,.3);
+    font-size: .9rem;
+  }
+
     width: 40px;
     height: 40px;
     border: 4px solid var(--pink-light);
@@ -613,9 +688,12 @@
   <div class="end-stats">
     <div class="end-stat-row"><span class="lbl">Pairs Found</span><span class="v" id="end-pairs">0</span></div>
     <div class="end-stat-row"><span class="lbl">Total Moves</span><span class="v" id="end-moves">0</span></div>
+    <div class="end-stat-row"><span class="lbl">Wrong Tries</span><span class="v" id="end-wrong">0</span></div>
     <div class="end-stat-row"><span class="lbl">Time</span><span class="v" id="end-time">0:00</span></div>
     <div class="end-stat-row"><span class="lbl">Best Time</span><span class="v" id="end-best-time">—</span></div>
   </div>
+
+  <div id="result-sections"></div>
 
   <div class="end-actions">
     <button class="play-btn" onclick="startGame()">💕 Play Again</button>
@@ -725,13 +803,14 @@ const setup = {
 
 const game = {
   active: false,
-  cards: [],          // [{id, word, lang ('sv'|'en'), pairId, matched, flipped, el}]
-  flippedQueue: [],   // 0, 1, or 2 cards currently flipped
+  cards: [],
+  flippedQueue: [],
   pairsFound: 0,
   moves: 0,
   startTime: 0,
   timerId: null,
-  lockBoard: false,   // briefly while showing mismatch
+  lockBoard: false,
+  mistakes: [],   // [{shown, expected}] — tracks unique wrong attempts
 };
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -852,6 +931,7 @@ function resetGame() {
   game.pairsFound = 0;
   game.moves = 0;
   game.lockBoard = false;
+  game.mistakes = [];
   if (game.timerId) { clearInterval(game.timerId); game.timerId = null; }
   $('stat-found').textContent = 0;
   $('stat-pairs').textContent = setup.pairCount;
@@ -984,7 +1064,23 @@ function checkPair() {
       }
     }, 350);
   } else {
-    // Wrong pair — flash + flip back
+    // Wrong pair — record it for the recap
+    // We log: the Swedish word the user "claimed" and what its real English is
+    const swCard = a.lang === 'sv' ? a : (b.lang === 'sv' ? b : null);
+    const enCard = a.lang === 'en' ? a : (b.lang === 'en' ? b : null);
+    if (swCard && enCard) {
+      const key = `${swCard.word.swedish}|${enCard.word.english}`;
+      // De-dupe in case they keep guessing the same wrong combo
+      if (!game.mistakes.find(m => m.key === key)) {
+        game.mistakes.push({
+          key,
+          swedish: swCard.word.swedish,
+          correctEnglish: swCard.word.english,
+          guessedEnglish: enCard.word.english,
+        });
+      }
+    }
+
     setTimeout(() => {
       a.el.classList.add('wrong-flash');
       b.el.classList.add('wrong-flash');
@@ -1092,17 +1188,83 @@ function victory() {
 
   const elapsed = (performance.now() - game.startTime) / 1000;
   const isNewRecord = saveBestTime(setup.pairCount, elapsed);
+  const wrongTries = Math.max(0, game.moves - setup.pairCount);
 
   showScreen('end-screen');
   $('end-pairs').textContent = setup.pairCount;
   $('end-moves').textContent = game.moves;
+  $('end-wrong').textContent = wrongTries;
   $('end-time').textContent = formatTime(elapsed);
   const best = bestTimes[setup.pairCount];
   $('end-best-time').textContent = best ? formatTime(best) : '—';
   $('new-record-line').innerHTML = isNewRecord ? '<div class="new-record">★ NEW BEST TIME ★</div>' : '';
 
+  renderResultSections();
+
   playVictory();
   bigVictoryHeartShow();
+}
+
+function renderResultSections() {
+  const container = $('result-sections');
+
+  // Build list of all matched pairs (just the words used in this game)
+  const usedPairs = [];
+  const seen = new Set();
+  game.cards.forEach(c => {
+    if (!seen.has(c.pairId)) {
+      seen.add(c.pairId);
+      usedPairs.push(c.word);
+    }
+  });
+
+  let html = '';
+
+  // Perfect banner if no mistakes
+  if (game.mistakes.length === 0) {
+    html += `<div class="perfect-banner">✨ PERFECT — NO WRONG GUESSES ✨</div>`;
+  } else {
+    // Mistakes section
+    const items = game.mistakes.map(m => `
+      <div class="result-item">
+        <div class="sv">${escapeHtml(m.swedish)}</div>
+        <div class="arrow">→</div>
+        <div>
+          <span class="en">${escapeHtml(m.correctEnglish)}</span>
+          <span class="wrong-en">you tried: ${escapeHtml(m.guessedEnglish)}</span>
+        </div>
+      </div>
+    `).join('');
+    html += `
+      <div class="result-card">
+        <div class="result-card-header mistakes">
+          <span>📚 Words to Review</span>
+          <span class="result-count">${game.mistakes.length}</span>
+        </div>
+        <div class="result-list">${items}</div>
+      </div>
+    `;
+  }
+
+  // All pairs found in this game (study list)
+  const matchedItems = usedPairs.map(w => `
+    <div class="result-item">
+      <div class="sv">${escapeHtml(w.swedish)}</div>
+      <div class="arrow">→</div>
+      <div class="en">${escapeHtml(w.english)}</div>
+    </div>
+  `).join('');
+  html += `
+    <div class="result-card">
+      <div class="result-card-header">
+        <span>💕 Pairs You Matched</span>
+        <span class="result-count">${usedPairs.length}</span>
+      </div>
+      <div class="result-list">${matchedItems}</div>
+    </div>
+  `;
+
+  container.innerHTML = html;
 }
 
 function bigVictoryHeartShow() {
